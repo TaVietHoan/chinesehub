@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chinese Learning Hub - Nền tảng học Tiếng Trung 1:1</title>
+  
+  <!-- Fonts: Be Vietnam Pro + Noto Sans SC + Noto Serif SC -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    /* ==========================================================================
+       DESIGN SYSTEM: Modern Chinese Editorial + Contemporary SaaS
+       Primary: #C84B38 (Cinnabar Red) | Secondary: #66877A (Jade Green)
+       ========================================================================== */
+    :root {
+      --primary: #C84B38;
+      --primary-dark: #A93629;
+      --primary-light: #FBF0EE;
+      --bg-page: #F7F6F2;
+      --surface: #FFFFFF;
+      --text-main: #252824;
+      --text-muted: #777970;
+      --jade-green: #66877A;
+      --jade-light: #EBF1EF;
+      --warm-gold: #C5A56A;
+      --border-color: #E9E7E0;
+      --danger: #C84B38;
+      --success: #4F8A69;
+      --warning: #D49A45;
+      --font-body: 'Be Vietnam Pro', sans-serif;
+      --font-chinese: 'Noto Sans SC', sans-serif;
+      --font-editorial: 'Noto Serif SC', serif;
+      --shadow-subtle: 0 4px 16px rgba(37, 40, 36, 0.05);
+      --radius-sm: 6px;
+      --radius-md: 10px;
+      --radius-lg: 16px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .zh-text { font-family: var(--font-chinese); }
+    .zh-serif { font-family: var(--font-editorial); }
+
+    /* LAYOUT WRAPPER */
+    #app-container {
+      display: flex;
+      min-height: 100vh;
+    }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border-color);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      z-index: 50;
+    }
+
+    .brand-header {
+      padding: 24px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .brand-logo-seal {
+      width: 40px;
+      height: 40px;
+      background: var(--primary);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-editorial);
+      font-weight: 700;
+      font-size: 20px;
+      border-radius: var(--radius-sm);
+      box-shadow: 0 2px 8px rgba(200, 75, 56, 0.3);
+    }
+
+    .brand-title-wrap h1 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.2px;
+    }
+
+    .brand-title-wrap p {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .sidebar-menu {
+      flex: 1;
+      padding: 20px 12px;
+      overflow-y: auto;
+      list-style: none;
+    }
+
+    .menu-group-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      padding: 10px 12px 6px;
+      letter-spacing: 0.6px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      border-radius: var(--radius-sm);
+      color: var(--text-main);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      margin-bottom: 3px;
+    }
+
+    .nav-item i { width: 18px; height: 18px; color: var(--text-muted); }
+    .nav-item:hover { background: #F3F1EC; }
+    .nav-item.active {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 600;
+    }
+    .nav-item.active i { color: var(--primary); }
+
+    .user-profile-badge {
+      padding: 16px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .user-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 1px solid var(--border-color);
+    }
+
+    .user-info { flex: 1; overflow: hidden; }
+    .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    .user-role-tag {
+      display: inline-block;
+      font-size: 10px;
+      background: var(--jade-light);
+      color: var(--jade-green);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+
+    /* MAIN CONTENT VIEWPORT */
+    .main-viewport {
+      margin-left: 260px;
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* TOP BAR */
+    .top-header {
+      height: 64px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 32px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+    }
+
+    .breadcrumb-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    /* CHINESE PINYIN IME TOGGLE BAR */
+    .ime-switcher-widget {
+      display: inline-flex;
+      align-items: center;
+      background: #F3F1EC;
+      padding: 3px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .ime-toggle-btn {
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 4px;
+      border: none;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text-muted);
+      transition: all 0.15s ease;
+    }
+
+    .ime-toggle-btn.active {
+      background: var(--surface);
+      color: var(--primary);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    }
+
+    /* VIEW CONTENT PADDING */
+    .page-content-body {
+      padding: 32px;
+      flex: 1;
+      max-width: 1360px;
+      width: 100%;
+      margin: 0 auto;
+    }
+
+    /* UI CARDS & PANELS */
+    .editorial-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-subtle);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card-header-clean {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.15s ease;
+      border: 1px solid transparent;
+      text-decoration: none;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { background: #fff; border-color: var(--border-color); color: var(--text-main); }
+    .btn-outline:hover { background: #F8F7F4; border-color: #DCD9D0; }
+    .btn-jade { background: var(--jade-green); color: #fff; }
+    .btn-jade:hover { background: #557267; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+
+    /* METRIC STAT WIDGETS */
+    .stat-grid-4 {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .stat-metric-box {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-subtle);
+    }
+
+    .stat-metric-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-metric-val {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 6px;
+    }
+
+    /* DATA TABLES */
+    .hub-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+    }
+
+    .hub-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    .hub-table th {
+      background: #FAF9F6;
+      padding: 12px 16px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .hub-table td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border-color);
+      color: var(--text-main);
+    }
+
+    .hub-table tr:last-child td { border-bottom: none; }
+    .hub-table tr:hover td { background: #FDFCFB; }
+
+    /* PINYIN POPUP IME CANDIDATES */
+    #pinyin-ime-popover {
+      position: absolute;
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      border-radius: var(--radius-sm);
+      padding: 6px 10px;
+      display: none;
+      z-index: 9999;
+      font-family: var(--font-chinese);
+      font-size: 14px;
+    }
+
+    .ime-syllable-display {
+      font-size: 11px;
+      color: var(--primary);
+      font-family: var(--font-body);
+      font-weight: 600;
+      margin-bottom: 4px;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 2px;
+    }
+
+    .ime-candidate-item {
+      display: inline-block;
+      padding: 4px 8px;
+      margin: 2px;
+      cursor: pointer;
+      border-radius: 4px;
+    }
+
+    .ime-candidate-item:hover, .ime-candidate-item.selected {
+      background: var(--primary-light);
+      color: var(--primary);
+      font-weight: 700;
+    }
+
+    /* FLASHCARD SM-2 UI */
+    .flashcard-stage {
+      max-width: 600px;
+      margin: 30px auto;
+      perspective: 1000px;
+    }
+
+    .flashcard-card-inner {
+      width: 100%;
+      height: 340px;
+      background: var(--surface);
+      border: 2px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      text-align: center;
+      position: relative;
+      transition: transform 0.4s cubic-bezier(0.4, 0.2, 0.2, 1);
+    }
+
+    .card-hanzi-display {
+      font-size: 58px;
+      font-family: var(--font-chinese);
+      font-weight: 700;
+      color: var(--text-main);
+      margin-bottom: 12px;
+    }
+
+    .card-pinyin-display {
+      font-size: 20px;
+      color: var(--primary);
+      font-weight: 500;
+      margin-bottom: 8px;
+    }
+
+    .card-meaning-display {
+      font-size: 18px;
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    .card-example-display {
+      margin-top: 16px;
+      font-size: 14px;
+      color: var(--text-muted);
+      border-top: 1px dashed var(--border-color);
+      padding-top: 12px;
+      width: 100%;
+    }
+
+    /* MODAL SYSTEM */
+    .hub-modal-overlay {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(37, 40, 36, 0.5);
+      backdrop-filter: blur(2px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .hub-modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .hub-modal-box {
+      background: var(--surface);
+      width: 90%;
+      max-width: 650px;
+      max-height: 90vh;
+      overflow-y: auto;
+      border-radius: var(--radius-md);
+      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+      padding: 28px;
+    }
+
+    /* TOAST NOTIFICATIONS */
+    #toast-rack {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .toast-pill {
+      background: var(--text-main);
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      animation: slideIn 0.25s ease;
+    }
+    .toast-pill.success { background: var(--success); }
+    .toast-pill.error { background: var(--danger); }
+
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+
+    /* LOGIN SCREEN WRAPPER */
+    #login-view {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: var(--bg-page);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+    }
+
+    .login-card {
+      background: var(--surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-lg);
+      padding: 40px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: var(--shadow-subtle);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- AUTHENTICATION VIEW -->
+  <div id="login-view">
+    <div class="login-card">
+      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 24px;">
+        <div class="brand-logo-seal">华</div>
+        <div>
+          <h2 style="font-size: 18px; font-weight:700;">Chinese Learning Hub</h2>
+          <p style="font-size: 12px; color:var(--text-muted);">Nền tảng Quản lý Dạy & Học Tiếng Trung 1:1</p>
+        </div>
+      </div>
+
+      <form id="login-form">
+        <div style="margin-bottom: 16px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Email tài khoản</label>
+          <input type="email" id="login-email" required class="form-input" style="width:100%; padding:10px 12px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:13px;" placeholder="teacher@chinesehub.vn">
+        </div>
+        <div style="margin-bottom: 20px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Mật khẩu</label>
+          <input type="password" id="login-password" required class="form-input" style="width:100%; padding:10px 12px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:13px;" placeholder="••••••••">
+        </div>
+        <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width:100%; padding:11px; font-size:14px;">Đăng nhập hệ thống</button>
+      </form>
+
+      <div style="margin-top: 24px; padding-top:16px; border-top:1px solid var(--border-color); font-size:12px; color:var(--text-muted); line-height:1.5;">
+        <strong>Tài khoản Demo có sẵn:</strong><br>
+        • Giáo viên: <code>teacher@chinesehub.vn</code> | <code>Teacher@123</code><br>
+        • Học sinh: <code>student@chinesehub.vn</code> | <code>Student@123</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN APP CONTAINER -->
+  <div id="app-container" style="display: none;">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="brand-header">
+        <div class="brand-logo-seal">华</div>
+        <div class="brand-title-wrap">
+          <h1>Learning Hub</h1>
+          <p>Chinese 1:1 Mastery</p>
+        </div>
+      </div>
+
+      <ul class="sidebar-menu">
+        <li class="menu-group-label">Tổng quan</li>
+        <li><a class="nav-item active" data-view="dashboard"><i data-lucide="layout-dashboard"></i> Bàn làm việc</a></li>
+        <li><a class="nav-item" data-view="courses"><i data-lucide="book-open"></i> Lớp & Buổi học</a></li>
+
+        <li class="menu-group-label">Học tập & Bài tập</li>
+        <li><a class="nav-item" data-view="assignments"><i data-lucide="file-edit"></i> Bài tập & Nộp bài</a></li>
+        <li><a class="nav-item" data-view="error-notebook"><i data-lucide="alert-circle"></i> Sổ lỗi sai (错题本)</a></li>
+        <li><a class="nav-item" data-view="learning-journal"><i data-lucide="feather"></i> Nhật ký học tập</a></li>
+
+        <li class="menu-group-label">Công cụ Hán ngữ</li>
+        <li><a class="nav-item" data-view="dictionary"><i data-lucide="search"></i> Từ điển Trung - Việt</a></li>
+        <li><a class="nav-item" data-view="vocabulary"><i data-lucide="bookmark"></i> Sổ từ vựng cá nhân</a></li>
+        <li><a class="nav-item" data-view="flashcards"><i data-lucide="layers"></i> Thẻ ghi nhớ (Flashcards)</a></li>
+
+        <li class="menu-group-label">Phân tích & Tiến độ</li>
+        <li><a class="nav-item" data-view="reports"><i data-lucide="bar-chart-2"></i> Báo cáo & Đánh giá</a></li>
+      </ul>
+
+      <div class="user-profile-badge">
+        <img id="sidebar-user-avatar" class="user-avatar" src="" alt="Avatar">
+        <div class="user-info">
+          <div id="sidebar-user-name" class="user-name">Đang tải...</div>
+          <span id="sidebar-user-role" class="user-role-tag">ROLE</span>
+        </div>
+        <button id="btn-logout" title="Đăng xuất" class="btn btn-outline btn-sm" style="padding:6px;"><i data-lucide="log-out" style="width:14px; height:14px;"></i></button>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT -->
+    <main class="main-viewport">
+      <!-- HEADER -->
+      <header class="top-header">
+        <div class="breadcrumb-title" id="page-current-title">Bàn làm việc</div>
+        <div class="header-actions">
+          <!-- INTEGRATED PINYIN ENGINE SWITCHER -->
+          <div class="ime-switcher-widget">
+            <button type="button" class="ime-toggle-btn active" id="btn-ime-vi">VI</button>
+            <button type="button" class="ime-toggle-btn" id="btn-ime-zh">中文 Pinyin</button>
+          </div>
+          <span style="font-size:12px; color:var(--text-muted);" id="api-status-badge">● Trực tuyến</span>
+        </div>
+      </header>
+
+      <!-- PAGE BODY VIEWS -->
+      <div class="page-content-body">
+        
+        <!-- VIEW: DASHBOARD -->
+        <section id="view-dashboard" class="content-view-pane">
+          <div class="stat-grid-4">
+            <div class="stat-metric-box">
+              <div class="stat-metric-label">Buổi học hoàn thành</div>
+              <div class="stat-metric-val" id="stat-completed-lessons">0/0</div>
+            </div>
+            <div class="stat-metric-box">
+              <div class="stat-metric-label">Bài tập chờ xử lý</div>
+              <div class="stat-metric-val" id="stat-pending-tasks">0</div>
+            </div>
+            <div class="stat-metric-box">
+              <div class="stat-metric-label">Điểm số trung bình</div>
+              <div class="stat-metric-val" id="stat-avg-score">0.0</div>
+            </div>
+            <div class="stat-metric-box">
+              <div class="stat-metric-label">Từ vựng đến hạn ôn</div>
+              <div class="stat-metric-val" id="stat-due-flashcards">0</div>
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px;">
+            <div class="editorial-card">
+              <div class="card-header-clean">
+                <div class="card-title"><i data-lucide="calendar"></i> Buổi học tiếp theo</div>
+                <a id="btn-join-meet" target="_blank" class="btn btn-jade btn-sm"><i data-lucide="video"></i> Vào Google Meet</a>
+              </div>
+              <div id="dash-upcoming-lesson-info" style="font-size:14px; color:var(--text-main);">
+                Đang nạp thông tin buổi học...
+              </div>
+            </div>
+
+            <div class="editorial-card">
+              <div class="card-header-clean">
+                <div class="card-title"><i data-lucide="bell"></i> Việc cần chú ý</div>
+              </div>
+              <div id="dash-action-items-list" style="font-size:13px; color:var(--text-muted);">
+                Chưa có cảnh báo học tập.
+              </div>
+            </div>
+          </div>
+
+          <div class="editorial-card">
+            <div class="card-header-clean">
+              <div class="card-title"><i data-lucide="clock"></i> Hoạt động bài nộp gần đây</div>
+            </div>
+            <div class="hub-table-wrapper">
+              <table class="hub-table">
+                <thead>
+                  <tr>
+                    <th>Bài tập</th>
+                    <th>Lần nộp</th>
+                    <th>Thời gian</th>
+                    <th>Trạng thái</th>
+                    <th>Điểm số</th>
+                  </tr>
+                </thead>
+                <tbody id="dash-submissions-tbody">
+                  <tr><td colspan="5" style="text-align:center;">Đang tải dữ liệu...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: COURSES & LESSONS -->
+        <section id="view-courses" class="content-view-pane" style="display:none;">
+          <div class="card-header-clean" style="margin-bottom:20px;">
+            <h2 style="font-size:18px; font-weight:700;">Khóa học & Lịch trình buổi học 1:1</h2>
+            <button id="btn-create-lesson-modal" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Tạo buổi học mới</button>
+          </div>
+          <div id="courses-lessons-container"></div>
+        </section>
+
+        <!-- VIEW: ASSIGNMENTS -->
+        <section id="view-assignments" class="content-view-pane" style="display:none;">
+          <div class="card-header-clean" style="margin-bottom:20px;">
+            <h2 style="font-size:18px; font-weight:700;">Danh sách bài tập & Giao nhiệm vụ</h2>
+            <button id="btn-create-assignment-modal" class="btn btn-primary btn-sm"><i data-lucide="plus-circle"></i> Giao bài tập mới</button>
+          </div>
+          <div id="assignments-list-container"></div>
+        </section>
+
+        <!-- VIEW: ERROR NOTEBOOK -->
+        <section id="view-error-notebook" class="content-view-pane" style="display:none;">
+          <div class="editorial-card">
+            <div class="card-header-clean">
+              <div>
+                <h2 style="font-size:18px; font-weight:700;">Sổ lỗi sai cá nhân (错题本)</h2>
+                <p style="font-size:12px; color:var(--text-muted);">Tự động trích xuất từ các lỗi ngữ pháp và từ vựng trong bài tập đã chấm.</p>
+              </div>
+            </div>
+            <div class="hub-table-wrapper">
+              <table class="hub-table">
+                <thead>
+                  <tr>
+                    <th>Lỗi sai của học sinh</th>
+                    <th>Sửa lại chuẩn xác</th>
+                    <th>Giải thích chi tiết của Giáo viên</th>
+                    <th>Phân loại</th>
+                    <th>Trạng thái</th>
+                  </tr>
+                </thead>
+                <tbody id="error-notebook-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: LEARNING JOURNAL -->
+        <section id="view-learning-journal" class="content-view-pane" style="display:none;">
+          <div class="editorial-card">
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:14px;">Viết nhật ký phản tư buổi học hôm nay</h3>
+            <form id="journal-entry-form">
+              <div style="margin-bottom:12px;">
+                <label style="font-size:12px; font-weight:600;">Hôm nay bạn đã học được kiến thức trọng tâm gì?</label>
+                <textarea id="journal-learned" class="form-input pinyin-enabled" rows="2" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);" required></textarea>
+              </div>
+              <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px;">
+                <div>
+                  <label style="font-size:12px; font-weight:600;">Phần nào còn cảm thấy khó hiểu?</label>
+                  <input type="text" id="journal-difficulties" class="form-input pinyin-enabled" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
+                </div>
+                <div>
+                  <label style="font-size:12px; font-weight:600;">Mức độ tự tin / hiểu bài (1-5 sao)</label>
+                  <select id="journal-rating" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
+                    <option value="5">⭐⭐⭐⭐⭐ (Hiểu rất rõ, sẵn sàng vận dụng)</option>
+                    <option value="4">⭐⭐⭐⭐ (Hiểu tương đối tốt)</option>
+                    <option value="3">⭐⭐⭐ (Cần ôn lại thêm bài tập)</option>
+                    <option value="2">⭐⭐ (Còn nhiều khúc mắc)</option>
+                    <option value="1">⭐ (Chưa nắm được trọng tâm)</option>
+                  </select>
+                </div>
+              </div>
+              <button type="submit" class="btn btn-primary btn-sm">Gửi nhật ký học tập</button>
+            </form>
+          </div>
+          <div id="journal-entries-history"></div>
+        </section>
+
+        <!-- VIEW: DICTIONARY -->
+        <section id="view-dictionary" class="content-view-pane" style="display:none;">
+          <div class="editorial-card">
+            <h2 style="font-size:18px; font-weight:700; margin-bottom:16px;">Tra cứu Từ điển Tiếng Trung - Tiếng Việt</h2>
+            <div style="display:flex; gap:12px; margin-bottom:20px;">
+              <input type="text" id="dict-search-input" class="form-input pinyin-enabled" placeholder="Gõ chữ Hán, Pinyin hoặc nghĩa Tiếng Việt (VD: 你好, nihao, xin chao)..." style="flex:1; padding:12px 16px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:14px;">
+              <button id="btn-dict-search" class="btn btn-primary"><i data-lucide="search"></i> Tra từ</button>
+            </div>
+            <div id="dict-search-results"></div>
+          </div>
+        </section>
+
+        <!-- VIEW: VOCABULARY NOTEBOOK -->
+        <section id="view-vocabulary" class="content-view-pane" style="display:none;">
+          <div class="card-header-clean" style="margin-bottom:20px;">
+            <h2 style="font-size:18px; font-weight:700;">Sổ từ vựng cá nhân tích lũy</h2>
+            <button id="btn-add-vocab-modal" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Thêm từ mới</button>
+          </div>
+          <div class="editorial-card">
+            <div class="hub-table-wrapper">
+              <table class="hub-table">
+                <thead>
+                  <tr>
+                    <th>Chữ Hán</th>
+                    <th>Pinyin</th>
+                    <th>Nghĩa tiếng Việt</th>
+                    <th>Loại từ / Cấp độ</th>
+                    <th>Ví dụ ứng dụng</th>
+                    <th>Yêu thích</th>
+                  </tr>
+                </thead>
+                <tbody id="vocab-table-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: FLASHCARDS (SM-2) -->
+        <section id="view-flashcards" class="content-view-pane" style="display:none;">
+          <div class="card-header-clean" style="margin-bottom:20px;">
+            <h2 style="font-size:18px; font-weight:700;">Học từ vựng thông minh (Spaced Repetition SM-2)</h2>
+            <div id="deck-selector-wrap"></div>
+          </div>
+
+          <div class="flashcard-stage">
+            <div id="flashcard-box" class="flashcard-card-inner">
+              <div id="fc-front-pane">
+                <div class="card-hanzi-display" id="fc-hanzi">Chưa có thẻ</div>
+                <p style="font-size:12px; color:var(--text-muted);">Nhấn thẻ hoặc bấm phím Space để xem kết quả</p>
+              </div>
+              <div id="fc-back-pane" style="display:none;">
+                <div class="card-pinyin-display" id="fc-pinyin"></div>
+                <div class="card-meaning-display" id="fc-meaning"></div>
+                <div class="card-example-display" id="fc-example"></div>
+              </div>
+            </div>
+
+            <div id="fc-action-controls" style="display:none; margin-top:20px; justify-content:center; gap:12px;">
+              <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="App.Flashcard.review(1)">Quên / Lại (1 ngày)</button>
+              <button class="btn btn-outline" style="color:var(--warning); border-color:var(--warning);" onclick="App.Flashcard.review(2)">Khó</button>
+              <button class="btn btn-outline" style="color:var(--jade-green); border-color:var(--jade-green);" onclick="App.Flashcard.review(3)">Tốt</button>
+              <button class="btn btn-jade" onclick="App.Flashcard.review(4)">Dễ</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW: REPORTS & ANALYTICS -->
+        <section id="view-reports" class="content-view-pane" style="display:none;">
+          <div class="editorial-card">
+            <h2 style="font-size:18px; font-weight:700; margin-bottom:16px;">Phân tích kết quả học tập & Tiến trình</h2>
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:20px;">
+              <div>
+                <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; text-align:center;">Phổ điểm & Kỹ năng</h4>
+                <canvas id="chart-skills-radar" height="220"></canvas>
+              </div>
+              <div>
+                <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; text-align:center;">Tỷ lệ hoàn thành nhiệm vụ</h4>
+                <canvas id="chart-completion-donut" height="220"></canvas>
+              </div>
+            </div>
+          </div>
+
+          <div class="editorial-card">
+            <div class="card-title" style="margin-bottom:14px;"><i data-lucide="shield-alert"></i> Những điểm yếu ngữ pháp cần đặc biệt lưu ý</div>
+            <div id="report-attention-list"></div>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- POPUP CANDIDATES FOR BUILT-IN PINYIN ENGINE -->
+  <div id="pinyin-ime-popover">
+    <div class="ime-syllable-display" id="ime-syllable-text">ni</div>
+    <div id="ime-candidates-list"></div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-rack"></div>
+
+  <!-- SUBMISSION MODAL DIALOG -->
+  <div id="submission-modal" class="hub-modal-overlay">
+    <div class="hub-modal-box">
+      <div class="card-header-clean">
+        <h3 style="font-size:16px; font-weight:700;" id="sub-modal-title">Nộp bài tập</h3>
+        <button class="btn btn-outline btn-sm" onclick="App.UI.closeModal('submission-modal')">✕</button>
+      </div>
+      <form id="submission-form">
+        <input type="hidden" id="sub-assignment-id">
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Nội dung văn bản (Hỗ trợ Pinyin trực tiếp)</label>
+          <textarea id="sub-text-content" class="form-input pinyin-enabled" rows="5" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:14px;" placeholder="Gõ câu trả lời bằng chữ Hán tại đây..."></textarea>
+        </div>
+        <div style="margin-bottom:16px;">
+          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Đính kèm tập tin (PDF, DOCX, Ảnh, Âm thanh ghi âm)</label>
+          <input type="file" id="sub-file-input" style="font-size:13px;">
+        </div>
+        <button type="submit" id="btn-submit-work" class="btn btn-primary" style="width:100%;">Nộp bài chính thức</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- GRADING MODAL (FOR TEACHER) -->
+  <div id="grading-modal" class="hub-modal-overlay">
+    <div class="hub-modal-box" style="max-width:800px;">
+      <div class="card-header-clean">
+        <h3 style="font-size:16px; font-weight:700;">Chấm điểm & Nhận xét bài làm</h3>
+        <button class="btn btn-outline btn-sm" onclick="App.UI.closeModal('grading-modal')">✕</button>
+      </div>
+      <div id="grading-submission-summary" style="margin-bottom:16px; background:#FAF9F6; padding:12px; border-radius:var(--radius-sm); font-size:13px;"></div>
+      <form id="grading-form">
+        <input type="hidden" id="grade-sub-id">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
+          <div>
+            <label style="font-size:12px; font-weight:600;">Tổng điểm số (thang 100)</label>
+            <input type="number" id="grade-total-score" min="0" max="100" required style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
+          </div>
+          <div>
+            <label style="font-size:12px; font-weight:600;">Ngữ pháp (Grammar /10)</label>
+            <input type="number" id="grade-rubric-grammar" min="0" max="10" value="8" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
+          </div>
+        </div>
+        <div style="margin-bottom:14px;">
+          <label style="font-size:12px; font-weight:600;">Nhận xét chi tiết của Lão Sư</label>
+          <textarea id="grade-feedback-text" rows="3" class="pinyin-enabled" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);"></textarea>
+        </div>
+
+        <div style="border-top:1px dashed var(--border-color); padding-top:12px; margin-bottom:14px;">
+          <h4 style="font-size:13px; font-weight:700; margin-bottom:6px;">Trích xuất lỗi sai vào Sổ Lỗi (Error Notebook)</h4>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:6px;">
+            <input type="text" id="grade-err-wrong" placeholder="Câu học sinh viết sai..." style="padding:6px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:12px;">
+            <input type="text" id="grade-err-correct" placeholder="Câu sửa chuẩn xác..." style="padding:6px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:12px;">
+          </div>
+          <input type="text" id="grade-err-exp" placeholder="Giải thích lý do sai..." style="width:100%; padding:6px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:12px;">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;">Lưu kết quả & Trả bài</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC SCRIPT -->
+  <script src="app.js"></script>
+</body>
+</html>
