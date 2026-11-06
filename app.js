@@ -15,7 +15,7 @@ window.App = (function() {
   // ==========================================
   const CONFIG = {
     // Thay thế chuỗi này bằng Web App URL bạn nhận được từ Google Apps Script (phải có đuôi /exec)
-    API_URL: "https://script.google.com/macros/s/AKfycbw6NfVnL3eP0bB_EXAMPLE_URL/exec",
+    API_URL: "https://script.google.com/macros/s/AKfycbyDD9DjMYFx9YiCRTmCpkSQvlz1-OgMR703Oa1dXSlfjAePJw0F3htejYnD3ZG8yX0W5g/exec",
     STORAGE_KEYS: {
       TOKEN: "clh_auth_token",
       USER: "clh_user_data",
