@@ -102,6 +102,7 @@
       font-size: 20px;
       border-radius: var(--radius-sm);
       box-shadow: 0 2px 8px rgba(200, 75, 56, 0.3);
+      flex-shrink: 0;
     }
 
     .brand-title-wrap h1 {
@@ -172,6 +173,8 @@
       border-radius: 50%;
       object-fit: cover;
       border: 1px solid var(--border-color);
+      flex-shrink: 0;
+      background-color: var(--bg-page);
     }
 
     .user-info { flex: 1; overflow: hidden; }
@@ -372,6 +375,36 @@
     .hub-table tr:last-child td { border-bottom: none; }
     .hub-table tr:hover td { background: #FDFCFB; }
 
+    /* FORM ELEMENTS */
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-family: inherit;
+      color: var(--text-main);
+      background: #fff;
+      transition: border-color 0.15s ease;
+    }
+
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
     /* PINYIN POPUP IME CANDIDATES */
     #pinyin-ime-popover {
       position: absolute;
@@ -566,11 +599,11 @@
       <form id="login-form">
         <div style="margin-bottom: 16px;">
           <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Email tài khoản</label>
-          <input type="email" id="login-email" required class="form-input" style="width:100%; padding:10px 12px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:13px;" placeholder="teacher@chinesehub.vn">
+          <input type="email" id="login-email" required class="form-input" placeholder="teacher@chinesehub.vn">
         </div>
         <div style="margin-bottom: 20px;">
           <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Mật khẩu</label>
-          <input type="password" id="login-password" required class="form-input" style="width:100%; padding:10px 12px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:13px;" placeholder="••••••••">
+          <input type="password" id="login-password" required class="form-input" placeholder="••••••••">
         </div>
         <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width:100%; padding:11px; font-size:14px;">Đăng nhập hệ thống</button>
       </form>
@@ -615,7 +648,8 @@
       </ul>
 
       <div class="user-profile-badge">
-        <img id="sidebar-user-avatar" class="user-avatar" src="" alt="Avatar">
+        <!-- SVG Data-URI mặc định triệt tiêu hoàn toàn lỗi 404 khi chưa load avatar -->
+        <img id="sidebar-user-avatar" class="user-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23C84B38'/%3E%3Ctext x='50%25' y='50%25' font-size='16' font-family='sans-serif' font-weight='bold' fill='%23ffffff' text-anchor='middle' dy='.35em'%3E华%3C/text%3E%3C/svg%3E" alt="Avatar">
         <div class="user-info">
           <div id="sidebar-user-name" class="user-name">Đang tải...</div>
           <span id="sidebar-user-role" class="user-role-tag">ROLE</span>
@@ -711,7 +745,10 @@
         <section id="view-courses" class="content-view-pane" style="display:none;">
           <div class="card-header-clean" style="margin-bottom:20px;">
             <h2 style="font-size:18px; font-weight:700;">Khóa học & Lịch trình buổi học 1:1</h2>
-            <button id="btn-create-lesson-modal" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Tạo buổi học mới</button>
+            <div style="display:flex; gap:10px;">
+              <button id="btn-create-course-modal" class="btn btn-outline btn-sm"><i data-lucide="plus"></i> Tạo khóa học</button>
+              <button id="btn-create-lesson-modal" class="btn btn-primary btn-sm"><i data-lucide="plus-circle"></i> Tạo buổi học mới</button>
+            </div>
           </div>
           <div id="courses-lessons-container"></div>
         </section>
@@ -756,18 +793,18 @@
           <div class="editorial-card">
             <h3 style="font-size:16px; font-weight:700; margin-bottom:14px;">Viết nhật ký phản tư buổi học hôm nay</h3>
             <form id="journal-entry-form">
-              <div style="margin-bottom:12px;">
-                <label style="font-size:12px; font-weight:600;">Hôm nay bạn đã học được kiến thức trọng tâm gì?</label>
-                <textarea id="journal-learned" class="form-input pinyin-enabled" rows="2" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);" required></textarea>
+              <div class="form-group">
+                <label>Hôm nay bạn đã học được kiến thức trọng tâm gì?</label>
+                <textarea id="journal-learned" class="form-textarea pinyin-enabled" rows="2" required placeholder="Gõ nội dung tâm đắc..."></textarea>
               </div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px;">
-                <div>
-                  <label style="font-size:12px; font-weight:600;">Phần nào còn cảm thấy khó hiểu?</label>
-                  <input type="text" id="journal-difficulties" class="form-input pinyin-enabled" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
+                <div class="form-group">
+                  <label>Phần nào còn cảm thấy khó hiểu?</label>
+                  <input type="text" id="journal-difficulties" class="form-input pinyin-enabled" placeholder="VD: Phân biệt 了 và 过...">
                 </div>
-                <div>
-                  <label style="font-size:12px; font-weight:600;">Mức độ tự tin / hiểu bài (1-5 sao)</label>
-                  <select id="journal-rating" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
+                <div class="form-group">
+                  <label>Mức độ tự tin / hiểu bài</label>
+                  <select id="journal-rating" class="form-select">
                     <option value="5">⭐⭐⭐⭐⭐ (Hiểu rất rõ, sẵn sàng vận dụng)</option>
                     <option value="4">⭐⭐⭐⭐ (Hiểu tương đối tốt)</option>
                     <option value="3">⭐⭐⭐ (Cần ôn lại thêm bài tập)</option>
@@ -787,7 +824,7 @@
           <div class="editorial-card">
             <h2 style="font-size:18px; font-weight:700; margin-bottom:16px;">Tra cứu Từ điển Tiếng Trung - Tiếng Việt</h2>
             <div style="display:flex; gap:12px; margin-bottom:20px;">
-              <input type="text" id="dict-search-input" class="form-input pinyin-enabled" placeholder="Gõ chữ Hán, Pinyin hoặc nghĩa Tiếng Việt (VD: 你好, nihao, xin chao)..." style="flex:1; padding:12px 16px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:14px;">
+              <input type="text" id="dict-search-input" class="form-input pinyin-enabled" placeholder="Gõ chữ Hán, Pinyin hoặc nghĩa Tiếng Việt (VD: 你好, nihao, xin chao)..." style="font-size:14px; padding:12px 16px;">
               <button id="btn-dict-search" class="btn btn-primary"><i data-lucide="search"></i> Tra từ</button>
             </div>
             <div id="dict-search-results"></div>
@@ -883,68 +920,222 @@
   <!-- TOAST CONTAINER -->
   <div id="toast-rack"></div>
 
-  <!-- SUBMISSION MODAL DIALOG -->
+  <!-- =========================================================================
+       MODAL DIALOGS
+       ========================================================================= -->
+
+  <!-- 1. MODAL: GIAO BÀI TẬP MỚI (CREATE ASSIGNMENT) -->
+  <div id="assignment-modal" class="hub-modal-overlay">
+    <div class="hub-modal-box">
+      <div class="card-header-clean">
+        <h3 style="font-size:16px; font-weight:700;">Giao bài tập mới</h3>
+        <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('assignment-modal')">✕</button>
+      </div>
+      <form id="assignment-create-form">
+        <div class="form-group">
+          <label>Tiêu đề bài tập *</label>
+          <input type="text" id="ass-title" class="form-input pinyin-enabled" required placeholder="VD: Luyện viết chữ Hán bài 2...">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>Loại bài tập</label>
+            <select id="ass-type" class="form-select">
+              <option value="Writing">Viết (Writing)</option>
+              <option value="Reading">Đọc hiểu (Reading)</option>
+              <option value="Listening">Nghe (Listening)</option>
+              <option value="Speaking">Nói / Ghi âm (Speaking)</option>
+              <option value="Vocabulary">Từ vựng (Vocabulary)</option>
+              <option value="Grammar">Ngữ pháp (Grammar)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Hạn chót nộp bài (Deadline) *</label>
+            <input type="date" id="ass-deadline" class="form-input" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mô tả yêu cầu</label>
+          <input type="text" id="ass-desc" class="form-input pinyin-enabled" placeholder="VD: Viết đoạn văn 80-100 chữ sử dụng mẫu câu 喜欢...">
+        </div>
+        <div class="form-group">
+          <label>Hướng dẫn chi tiết của Giáo viên</label>
+          <textarea id="ass-instructions" class="form-textarea pinyin-enabled" rows="3" placeholder="Gõ bằng bộ gõ Pinyin hoặc chụp ảnh bài viết tay..."></textarea>
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>Điểm tối đa</label>
+            <input type="number" id="ass-max-score" class="form-input" value="100" min="10" max="100">
+          </div>
+          <div class="form-group">
+            <label>Số lần nộp tối đa</label>
+            <input type="number" id="ass-max-attempts" class="form-input" value="3" min="1" max="10">
+          </div>
+        </div>
+        <button type="submit" id="btn-submit-assignment-create" class="btn btn-primary" style="width:100%; margin-top:8px;">Xuất bản bài tập</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. MODAL: TẠO BUỔI HỌC MỚI (CREATE LESSON) -->
+  <div id="lesson-modal" class="hub-modal-overlay">
+    <div class="hub-modal-box">
+      <div class="card-header-clean">
+        <h3 style="font-size:16px; font-weight:700;">Lên lịch buổi học 1:1</h3>
+        <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('lesson-modal')">✕</button>
+      </div>
+      <form id="lesson-create-form">
+        <div class="form-group">
+          <label>Tên buổi học *</label>
+          <input type="text" id="les-name" class="form-input" required placeholder="VD: Buổi 3: Luyện phát âm & Giao tiếp mua sắm">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr 1fr; gap:12px;">
+          <div class="form-group">
+            <label>Ngày học *</label>
+            <input type="date" id="les-date" class="form-input" required>
+          </div>
+          <div class="form-group">
+            <label>Bắt đầu</label>
+            <input type="time" id="les-start-time" class="form-input" value="19:30" required>
+          </div>
+          <div class="form-group">
+            <label>Kết thúc</label>
+            <input type="time" id="les-end-time" class="form-input" value="21:00" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Chủ đề trọng tâm</label>
+          <input type="text" id="les-topic" class="form-input pinyin-enabled" placeholder="VD: Mua sắm, số từ, đơn vị tiền tệ...">
+        </div>
+        <div class="form-group">
+          <label>Mục tiêu buổi học</label>
+          <textarea id="les-objectives" class="form-textarea pinyin-enabled" rows="2" placeholder="Nắm vững cách dùng 多少钱, cách mặc cả..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Đường dẫn Google Meet</label>
+          <input type="url" id="les-meet-url" class="form-input" value="https://meet.google.com/abc-defg-hij">
+        </div>
+        <button type="submit" id="btn-submit-lesson-create" class="btn btn-primary" style="width:100%; margin-top:8px;">Lên lịch buổi học</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. MODAL: TẠO KHÓA HỌC MỚI (CREATE COURSE) -->
+  <div id="course-modal" class="hub-modal-overlay">
+    <div class="hub-modal-box">
+      <div class="card-header-clean">
+        <h3 style="font-size:16px; font-weight:700;">Tạo khóa học 1:1 mới</h3>
+        <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('course-modal')">✕</button>
+      </div>
+      <form id="course-create-form">
+        <div class="form-group">
+          <label>Tên khóa học *</label>
+          <input type="text" id="crs-name" class="form-input" required placeholder="VD: Khóa Tiếng Trung HSK 3 Cấp Tốc">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>Cấp độ HSK</label>
+            <select id="crs-level" class="form-select">
+              <option value="Nhập môn">Nhập môn</option>
+              <option value="HSK 1">HSK 1</option>
+              <option value="HSK 2" selected>HSK 2</option>
+              <option value="HSK 3">HSK 3</option>
+              <option value="HSK 4">HSK 4</option>
+              <option value="HSK 5">HSK 5</option>
+              <option value="HSK 6">HSK 6</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tổng số buổi dự kiến</label>
+            <input type="number" id="crs-total-lessons" class="form-input" value="24" min="1" max="100">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Ngày bắt đầu</label>
+          <input type="date" id="crs-start-date" class="form-input">
+        </div>
+        <button type="submit" id="btn-submit-course-create" class="btn btn-primary" style="width:100%; margin-top:8px;">Khởi tạo khóa học</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. MODAL: THÊM TỪ VỰNG MỚI (CREATE VOCABULARY) -->
+  <div id="vocab-modal" class="hub-modal-overlay">
+    <div class="hub-modal-box">
+      <div class="card-header-clean">
+        <h3 style="font-size:16px; font-weight:700;">Thêm từ vựng vào sổ tay</h3>
+        <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('vocab-modal')">✕</button>
+      </div>
+      <form id="vocab-create-form">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>Chữ Hán giản thể *</label>
+            <input type="text" id="voc-simplified" class="form-input pinyin-enabled zh-text" required placeholder="VD: 漂亮" style="font-size:16px;">
+          </div>
+          <div class="form-group">
+            <label>Phiên âm Pinyin *</label>
+            <input type="text" id="voc-pinyin" class="form-input" required placeholder="VD: piàoliang">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nghĩa Tiếng Việt *</label>
+          <input type="text" id="voc-meaning" class="form-input" required placeholder="VD: Xinh đẹp, đẹp đẽ">
+        </div>
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label>Loại từ</label>
+            <input type="text" id="voc-type" class="form-input" value="Tính từ">
+          </div>
+          <div class="form-group">
+            <label>Cấp độ HSK</label>
+            <select id="voc-level" class="form-select">
+              <option value="HSK 1">HSK 1</option>
+              <option value="HSK 2">HSK 2</option>
+              <option value="HSK 3">HSK 3</option>
+              <option value="HSK 4">HSK 4</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Câu ví dụ tiếng Trung</label>
+          <input type="text" id="voc-example-zh" class="form-input pinyin-enabled zh-text" placeholder="VD: 她长得很漂亮。">
+        </div>
+        <div class="form-group">
+          <label>Dịch nghĩa ví dụ</label>
+          <input type="text" id="voc-example-vi" class="form-input" placeholder="VD: Cô ấy lớn lên trông rất xinh đẹp.">
+        </div>
+        <button type="submit" id="btn-submit-vocab-create" class="btn btn-primary" style="width:100%; margin-top:8px;">Lưu vào sổ từ</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 5. MODAL: NỘP BÀI TẬP (SUBMISSION MODAL) -->
   <div id="submission-modal" class="hub-modal-overlay">
     <div class="hub-modal-box">
       <div class="card-header-clean">
         <h3 style="font-size:16px; font-weight:700;" id="sub-modal-title">Nộp bài tập</h3>
-        <button class="btn btn-outline btn-sm" onclick="App.UI.closeModal('submission-modal')">✕</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('submission-modal')">✕</button>
       </div>
       <form id="submission-form">
         <input type="hidden" id="sub-assignment-id">
-        <div style="margin-bottom:16px;">
-          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Nội dung văn bản (Hỗ trợ Pinyin trực tiếp)</label>
-          <textarea id="sub-text-content" class="form-input pinyin-enabled" rows="5" style="width:100%; padding:10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:14px;" placeholder="Gõ câu trả lời bằng chữ Hán tại đây..."></textarea>
+        <div class="form-group">
+          <label>Nội dung văn bản (Hỗ trợ bộ gõ Pinyin trực tiếp)</label>
+          <textarea id="sub-text-content" class="form-textarea pinyin-enabled" rows="5" placeholder="Gõ câu trả lời bằng chữ Hán tại đây..."></textarea>
         </div>
-        <div style="margin-bottom:16px;">
-          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Đính kèm tập tin (PDF, DOCX, Ảnh, Âm thanh ghi âm)</label>
-          <input type="file" id="sub-file-input" style="font-size:13px;">
+        <div class="form-group">
+          <label>Đính kèm tập tin (PDF, DOCX, Ảnh, Âm thanh ghi âm)</label>
+          <input type="file" id="sub-file-input" class="form-input" style="padding:6px;">
         </div>
         <button type="submit" id="btn-submit-work" class="btn btn-primary" style="width:100%;">Nộp bài chính thức</button>
       </form>
     </div>
   </div>
 
-  <!-- GRADING MODAL (FOR TEACHER) -->
+  <!-- 6. MODAL: CHẤM ĐIỂM BÀI LÀM (GRADING MODAL) -->
   <div id="grading-modal" class="hub-modal-overlay">
     <div class="hub-modal-box" style="max-width:800px;">
       <div class="card-header-clean">
         <h3 style="font-size:16px; font-weight:700;">Chấm điểm & Nhận xét bài làm</h3>
-        <button class="btn btn-outline btn-sm" onclick="App.UI.closeModal('grading-modal')">✕</button>
+        <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('grading-modal')">✕</button>
       </div>
-      <div id="grading-submission-summary" style="margin-bottom:16px; background:#FAF9F6; padding:12px; border-radius:var(--radius-sm); font-size:13px;"></div>
+      <div id="grading-submission-summary" style="margin-bottom:16px; background:#FAF9F6; padding:12px; border-radius:var(--radius-sm); font-size:13px; border:1px solid var(--border-color);"></div>
       <form id="grading-form">
-        <input type="hidden" id="grade-sub-id">
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
-          <div>
-            <label style="font-size:12px; font-weight:600;">Tổng điểm số (thang 100)</label>
-            <input type="number" id="grade-total-score" min="0" max="100" required style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
-          </div>
-          <div>
-            <label style="font-size:12px; font-weight:600;">Ngữ pháp (Grammar /10)</label>
-            <input type="number" id="grade-rubric-grammar" min="0" max="10" value="8" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);">
-          </div>
-        </div>
-        <div style="margin-bottom:14px;">
-          <label style="font-size:12px; font-weight:600;">Nhận xét chi tiết của Lão Sư</label>
-          <textarea id="grade-feedback-text" rows="3" class="pinyin-enabled" style="width:100%; padding:8px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm);"></textarea>
-        </div>
-
-        <div style="border-top:1px dashed var(--border-color); padding-top:12px; margin-bottom:14px;">
-          <h4 style="font-size:13px; font-weight:700; margin-bottom:6px;">Trích xuất lỗi sai vào Sổ Lỗi (Error Notebook)</h4>
-          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:6px;">
-            <input type="text" id="grade-err-wrong" placeholder="Câu học sinh viết sai..." style="padding:6px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:12px;">
-            <input type="text" id="grade-err-correct" placeholder="Câu sửa chuẩn xác..." style="padding:6px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:12px;">
-          </div>
-          <input type="text" id="grade-err-exp" placeholder="Giải thích lý do sai..." style="width:100%; padding:6px 10px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:12px;">
-        </div>
-
-        <button type="submit" class="btn btn-primary" style="width:100%;">Lưu kết quả & Trả bài</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- APPLICATION LOGIC SCRIPT -->
-  <script src="app.js"></script>
-</body>
-</html>
