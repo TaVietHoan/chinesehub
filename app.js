@@ -1,8 +1,9 @@
 /**
  * ============================================================================
  * CHINESE LEARNING HUB - FRONTEND APPLICATION CORE (app.js)
+ * Version: 1.0.1 (Patched & Full Event Bindings)
  * Architecture: Clean Namespace Modular Client
- * Features: GAS Bridge, In-Page Pinyin IME, SM-2 Spaced Repetition, Canvas Overlay, Analytics
+ * Features: GAS Bridge, In-Page Pinyin IME, SM-2 Spaced Repetition, Full Modals
  * ============================================================================
  */
 
@@ -13,8 +14,8 @@ window.App = (function() {
   // 1. CONFIGURATION & STATE
   // ==========================================
   const CONFIG = {
-    // THAY THẾ URL NÀY BẰNG WEB APP DEPLOYMENT URL TỪ GOOGLE APPS SCRIPT
-    API_URL: "https://script.google.com/macros/s/AKfycbyDD9DjMYFx9YiCRTmCpkSQvlz1-OgMR703Oa1dXSlfjAePJw0F3htejYnD3ZG8yX0W5g/exec",
+    // Thay thế chuỗi này bằng Web App URL bạn nhận được từ Google Apps Script (phải có đuôi /exec)
+    API_URL: "https://script.google.com/macros/s/AKfycbw6NfVnL3eP0bB_EXAMPLE_URL/exec",
     STORAGE_KEYS: {
       TOKEN: "clh_auth_token",
       USER: "clh_user_data",
@@ -26,7 +27,7 @@ window.App = (function() {
     token: localStorage.getItem(CONFIG.STORAGE_KEYS.TOKEN) || null,
     user: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.USER) || "null"),
     currentView: "dashboard",
-    imeMode: localStorage.getItem(CONFIG.STORAGE_KEYS.IME_MODE) || "VI", // "VI" | "ZH"
+    imeMode: localStorage.getItem(CONFIG.STORAGE_KEYS.IME_MODE) || "VI",
     activeCourse: null,
     cachedFlashcards: [],
     currentCardIndex: 0
@@ -38,7 +39,7 @@ window.App = (function() {
   const API = {
     async call(action, payload = {}) {
       if (!CONFIG.API_URL || CONFIG.API_URL.includes("EXAMPLE_URL")) {
-        console.warn("[API] Chưa thiết lập CONFIG.API_URL thật. Vui lòng cấu hình URL deployment từ Google Apps Script.");
+        console.warn("[API] Chưa thiết lập CONFIG.API_URL. Vui lòng dán Web App URL của Apps Script vào app.js.");
       }
 
       const requestBody = {
@@ -49,7 +50,6 @@ window.App = (function() {
       };
 
       try {
-        // Gửi qua text/plain để tránh CORS preflight phức tạp trên Google Apps Script Web App
         const response = await fetch(CONFIG.API_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -103,7 +103,7 @@ window.App = (function() {
             UI.toast("Đăng nhập thành công!", "success");
             this.applyAuthState();
           } catch (err) {
-            // Toast đã bắn trong API.call
+            // Toast đã được bắt trong API.call
           } finally {
             btn.disabled = false;
             btn.innerText = "Đăng nhập hệ thống";
@@ -129,7 +129,22 @@ window.App = (function() {
 
         document.getElementById("sidebar-user-name").innerText = STATE.user.fullName;
         document.getElementById("sidebar-user-role").innerText = STATE.user.role;
-        document.getElementById("sidebar-user-avatar").src = STATE.user.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100";
+        
+        // Cập nhật avatar nếu có, nếu không giữ fallback SVG mặc định
+        if (STATE.user.avatar && STATE.user.avatar.trim() !== "") {
+          document.getElementById("sidebar-user-avatar").src = STATE.user.avatar;
+        }
+
+        // Ẩn/Hiện nút tạo buổi học, bài tập dựa trên Role
+        const isTeacher = (STATE.user.role === "TEACHER" || STATE.user.role === "ADMIN");
+        const teacherBtns = [
+          document.getElementById("btn-create-assignment-modal"),
+          document.getElementById("btn-create-lesson-modal"),
+          document.getElementById("btn-create-course-modal")
+        ];
+        teacherBtns.forEach(btn => {
+          if (btn) btn.style.display = isTeacher ? "inline-flex" : "none";
+        });
 
         Router.navigate("dashboard");
       } else {
@@ -155,7 +170,6 @@ window.App = (function() {
   // 4. BUILT-IN CHINESE PINYIN IME ENGINE
   // ==========================================
   const PinyinEngine = {
-    // Bảng dữ liệu ánh xạ âm Pinyin sang Chữ Hán tần suất cao (HSK 1-4)
     DICTIONARY_MAP: {
       "ni": ["你", "呢", "拟", "泥"],
       "hao": ["好", "号", "毫", "耗"],
@@ -166,7 +180,6 @@ window.App = (function() {
       "lao": ["老", "劳", "落"],
       "shi": ["是", "师", "时", "十", "事", "市", "识"],
       "laoshi": ["老师"],
-      "xue": ["学"],
       "sheng": ["生", "声", "升"],
       "xuesheng": ["学生"],
       "zhong": ["中", "重", "钟", "种"],
@@ -199,11 +212,25 @@ window.App = (function() {
       "hecha": ["喝茶"],
       "dian": ["点", "店", "电"],
       "qian": ["钱", "前", "千"],
+      "duo": ["多"],
+      "shao": ["少"],
       "duoshao": ["多少"],
       "duoshaoqian": ["多少钱"],
       "piao": ["票", "漂"],
       "liang": ["亮", "两", "量"],
-      "piaoliang": ["漂亮"]
+      "piaoliang": ["漂亮"],
+      "yi": ["一", "以", "已", "意", "医"],
+      "er": ["二", "儿", "而"],
+      "san": ["三"],
+      "si": ["四", "死", "思"],
+      "wu": ["五", "无", "物"],
+      "liu": ["六", "留", "流"],
+      "qi": ["七", "起", "气", "期"],
+      "ba": ["八", "吧", "把"],
+      "jiu": ["九", "就", "酒"],
+      "kuai": ["块", "快", "筷"],
+      "mao": ["毛", "猫"],
+      "fen": ["分", "份"]
     },
 
     activeInput: null,
@@ -214,7 +241,6 @@ window.App = (function() {
     init() {
       const viBtn = document.getElementById("btn-ime-vi");
       const zhBtn = document.getElementById("btn-ime-zh");
-      const popover = document.getElementById("pinyin-ime-popover");
 
       const setMode = (mode) => {
         STATE.imeMode = mode;
@@ -231,10 +257,9 @@ window.App = (function() {
         }
       };
 
-      viBtn.addEventListener("click", () => setMode("VI"));
-      zhBtn.addEventListener("click", () => setMode("ZH"));
+      if (viBtn) viBtn.addEventListener("click", () => setMode("VI"));
+      if (zhBtn) zhBtn.addEventListener("click", () => setMode("ZH"));
 
-      // Ủy quyền sự kiện gõ trên toàn trang cho các input có class .pinyin-enabled
       document.addEventListener("keydown", (e) => this.handleKeyDown(e));
     },
 
@@ -246,7 +271,6 @@ window.App = (function() {
       }
       this.activeInput = target;
 
-      // Xử lý khi popup IME đang mở
       if (this.currentBuffer.length > 0) {
         if (e.key >= '1' && e.key <= '9') {
           const index = parseInt(e.key) - 1;
@@ -291,7 +315,6 @@ window.App = (function() {
         }
       }
 
-      // Nhận diện ký tự alphabet tiếng Anh (pinyin)
       if (/^[a-zA-Z]$/.test(e.key) && !e.ctrlKey && !e.altKey && !e.metaKey) {
         e.preventDefault();
         this.currentBuffer += e.key.toLowerCase();
@@ -302,7 +325,6 @@ window.App = (function() {
     updateCandidates() {
       const candidates = this.DICTIONARY_MAP[this.currentBuffer] || [];
       if (candidates.length === 0) {
-        // Fallback: tìm ký tự lẻ
         this.candidateList = [this.currentBuffer];
       } else {
         this.candidateList = candidates;
@@ -316,7 +338,7 @@ window.App = (function() {
       const syllableText = document.getElementById("ime-syllable-text");
       const candidatesList = document.getElementById("ime-candidates-list");
 
-      if (!this.activeInput) return;
+      if (!this.activeInput || !popover) return;
 
       const rect = this.activeInput.getBoundingClientRect();
       popover.style.display = "block";
@@ -330,7 +352,6 @@ window.App = (function() {
         </span>
       `).join('');
 
-      // Click trực tiếp vào candidate
       candidatesList.querySelectorAll(".ime-candidate-item").forEach(item => {
         item.addEventListener("mousedown", (e) => {
           e.preventDefault();
@@ -350,7 +371,6 @@ window.App = (function() {
       el.value = currentVal.substring(0, start) + text + currentVal.substring(end);
       el.selectionStart = el.selectionEnd = start + text.length;
 
-      // Kích hoạt event input để các handler phản ứng
       el.dispatchEvent(new Event('input', { bubbles: true }));
       this.closePopover();
     },
@@ -411,7 +431,6 @@ window.App = (function() {
       document.getElementById("page-current-title").innerText = titles[viewName] || "Learning Hub";
       lucide.createIcons();
 
-      // Trigger lazy load view data
       this.loadViewData(viewName);
     },
 
@@ -465,7 +484,7 @@ window.App = (function() {
             document.getElementById("dash-upcoming-lesson-info").innerHTML = `
               <strong>${data.upcomingLesson.lesson_name}</strong><br>
               <span style="color:var(--text-muted);">Thời gian: ${data.upcomingLesson.lesson_date} | ${data.upcomingLesson.start_time} - ${data.upcomingLesson.end_time}</span><br>
-              <p style="margin-top:6px;">Chủ đề: <em>${data.upcomingLesson.topic}</em></p>
+              <p style="margin-top:6px;">Chủ đề: <em>${data.upcomingLesson.topic || 'Chưa cập nhật'}</em></p>
             `;
           } else {
             meetBtn.style.display = "none";
@@ -522,16 +541,103 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 7. MODULE: COURSES & LESSONS
+  // 7. MODULE: COURSES & LESSONS (WITH MODALS)
   // ==========================================
   const Courses = {
+    init() {
+      // 1. Mở modal tạo buổi học
+      const btnOpenLes = document.getElementById("btn-create-lesson-modal");
+      if (btnOpenLes) {
+        btnOpenLes.addEventListener("click", () => {
+          const today = new Date().toISOString().split("T")[0];
+          document.getElementById("les-date").value = today;
+          UI.openModal("lesson-modal");
+        });
+      }
+
+      // 2. Submit form tạo buổi học
+      const lesForm = document.getElementById("lesson-create-form");
+      if (lesForm) {
+        lesForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("btn-submit-lesson-create");
+          try {
+            btn.disabled = true;
+            btn.innerText = "Đang lên lịch...";
+            await API.call("lesson.create", {
+              courseId: STATE.activeCourse ? STATE.activeCourse.course_id : "",
+              lessonName: document.getElementById("les-name").value.trim(),
+              lessonDate: document.getElementById("les-date").value,
+              startTime: document.getElementById("les-start-time").value,
+              endTime: document.getElementById("les-end-time").value,
+              topic: document.getElementById("les-topic").value.trim(),
+              objectives: document.getElementById("les-objectives").value.trim(),
+              meetUrl: document.getElementById("les-meet-url").value.trim()
+            });
+            UI.toast("Đã lên lịch buổi học thành công!", "success");
+            UI.closeModal("lesson-modal");
+            lesForm.reset();
+            this.load();
+          } catch (err) {
+            // Handled
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "Lên lịch buổi học";
+          }
+        });
+      }
+
+      // 3. Mở modal tạo khóa học
+      const btnOpenCrs = document.getElementById("btn-create-course-modal");
+      if (btnOpenCrs) {
+        btnOpenCrs.addEventListener("click", () => {
+          const today = new Date().toISOString().split("T")[0];
+          document.getElementById("crs-start-date").value = today;
+          UI.openModal("course-modal");
+        });
+      }
+
+      // 4. Submit form tạo khóa học
+      const crsForm = document.getElementById("course-create-form");
+      if (crsForm) {
+        crsForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("btn-submit-course-create");
+          try {
+            btn.disabled = true;
+            btn.innerText = "Đang khởi tạo...";
+            const newCourse = await API.call("course.create", {
+              courseName: document.getElementById("crs-name").value.trim(),
+              hskLevel: document.getElementById("crs-level").value,
+              totalLessons: Number(document.getElementById("crs-total-lessons").value),
+              startDate: document.getElementById("crs-start-date").value
+            });
+            UI.toast("Đã khởi tạo khóa học thành công!", "success");
+            UI.closeModal("course-modal");
+            crsForm.reset();
+            STATE.activeCourse = newCourse;
+            this.load();
+          } catch (err) {
+            // Handled
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "Khởi tạo khóa học";
+          }
+        });
+      }
+    },
+
     async load() {
       const container = document.getElementById("courses-lessons-container");
       container.innerHTML = "<p>Đang tải danh sách khóa học...</p>";
       try {
         const courses = await API.call("course.list");
         if (courses.length === 0) {
-          container.innerHTML = "<div class='editorial-card'>Chưa có khóa học nào được chỉ định.</div>";
+          container.innerHTML = `
+            <div class='editorial-card' style='text-align:center; padding:30px;'>
+              <p style='color:var(--text-muted); margin-bottom:12px;'>Chưa có khóa học nào được chỉ định.</p>
+              <button class='btn btn-primary btn-sm' onclick="App.UI.openModal('course-modal')">Tạo khóa học ngay</button>
+            </div>`;
           return;
         }
         STATE.activeCourse = courses[0];
@@ -559,12 +665,12 @@ window.App = (function() {
                   </tr>
                 </thead>
                 <tbody>
-                  ${lessons.map((les, idx) => `
+                  ${lessons.length > 0 ? lessons.map((les, idx) => `
                     <tr>
                       <td><strong>#${idx + 1}</strong></td>
                       <td>
                         <strong>${les.lesson_name}</strong><br>
-                        <span style="font-size:12px; color:var(--text-muted);">${les.topic}</span>
+                        <span style="font-size:12px; color:var(--text-muted);">${les.topic || 'Chưa có chủ đề'}</span>
                       </td>
                       <td>${les.lesson_date} (${les.start_time})</td>
                       <td><span class="user-role-tag">${les.status}</span></td>
@@ -572,7 +678,7 @@ window.App = (function() {
                         ${les.meet_url ? `<a href="${les.meet_url}" target="_blank" class="btn btn-outline btn-sm">Vào lớp</a>` : ''}
                       </td>
                     </tr>
-                  `).join('')}
+                  `).join('') : `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Chưa có buổi học nào được tạo.</td></tr>`}
                 </tbody>
               </table>
             </div>
@@ -588,6 +694,97 @@ window.App = (function() {
   // 8. MODULE: ASSIGNMENTS & SUBMISSION
   // ==========================================
   const Assignments = {
+    init() {
+      // 1. Mở modal giao bài tập
+      const btnOpenAss = document.getElementById("btn-create-assignment-modal");
+      if (btnOpenAss) {
+        btnOpenAss.addEventListener("click", () => {
+          const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
+          document.getElementById("ass-deadline").value = nextWeek;
+          UI.openModal("assignment-modal");
+        });
+      }
+
+      // 2. Submit form giao bài tập mới
+      const assForm = document.getElementById("assignment-create-form");
+      if (assForm) {
+        assForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("btn-submit-assignment-create");
+          try {
+            btn.disabled = true;
+            btn.innerText = "Đang xuất bản...";
+            await API.call("assignment.create", {
+              courseId: STATE.activeCourse ? STATE.activeCourse.course_id : "",
+              title: document.getElementById("ass-title").value.trim(),
+              assignmentType: document.getElementById("ass-type").value,
+              deadline: document.getElementById("ass-deadline").value,
+              description: document.getElementById("ass-desc").value.trim(),
+              instructions: document.getElementById("ass-instructions").value.trim(),
+              maxScore: Number(document.getElementById("ass-max-score").value),
+              maxAttempts: Number(document.getElementById("ass-max-attempts").value),
+              publish: true
+            });
+            UI.toast("Đã xuất bản bài tập mới thành công!", "success");
+            UI.closeModal("assignment-modal");
+            assForm.reset();
+            this.load();
+          } catch (err) {
+            // Handled
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "Xuất bản bài tập";
+          }
+        });
+      }
+
+      // 3. Submit form nộp bài của học sinh
+      const subForm = document.getElementById("submission-form");
+      if (subForm) {
+        subForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const assId = document.getElementById("sub-assignment-id").value;
+          const text = document.getElementById("sub-text-content").value;
+          const fileInput = document.getElementById("sub-file-input");
+          const submitBtn = document.getElementById("btn-submit-work");
+
+          try {
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Đang tải bài nộp lên Google Drive...";
+
+            let fileIds = [];
+            if (fileInput.files.length > 0) {
+              const file = fileInput.files[0];
+              const base64 = await this.fileToBase64(file);
+              const uploadRes = await API.call("submission.uploadFile", {
+                fileName: file.name,
+                mimeType: file.type,
+                base64Content: base64
+              });
+              fileIds.push(uploadRes.file_id);
+            }
+
+            await API.call("submission.create", {
+              assignmentId: assId,
+              textContent: text,
+              submissionType: fileIds.length > 0 ? "Mixed" : "Text",
+              fileIds: fileIds
+            });
+
+            UI.toast("Nộp bài thành công!", "success");
+            UI.closeModal("submission-modal");
+            subForm.reset();
+            Router.loadViewData("dashboard");
+          } catch (err) {
+            // Handled
+          } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Nộp bài chính thức";
+          }
+        });
+      }
+    },
+
     async load() {
       const container = document.getElementById("assignments-list-container");
       container.innerHTML = "<p>Đang nạp bài tập...</p>";
@@ -599,7 +796,11 @@ window.App = (function() {
 
         const assList = await API.call("assignment.list", { courseId: STATE.activeCourse ? STATE.activeCourse.course_id : "" });
         if (assList.length === 0) {
-          container.innerHTML = "<div class='editorial-card'>Không có bài tập nào.</div>";
+          container.innerHTML = `
+            <div class='editorial-card' style='text-align:center; padding:30px;'>
+              <p style='color:var(--text-muted); margin-bottom:12px;'>Chưa có bài tập nào được giao.</p>
+              ${STATE.user.role === 'TEACHER' ? `<button class='btn btn-primary btn-sm' onclick="App.UI.openModal('assignment-modal')">Giao bài tập mới ngay</button>` : ''}
+            </div>`;
           return;
         }
 
@@ -616,13 +817,13 @@ window.App = (function() {
               <div>
                 ${STATE.user.role === "STUDENT" 
                   ? `<button class="btn btn-primary btn-sm" onclick="App.Assignments.openSubmitModal('${a.assignment_id}', '${a.title.replace(/'/g, "\\'")}')">Làm & Nộp bài</button>`
-                  : `<button class="btn btn-outline btn-sm">Xem danh sách nộp</button>`
+                  : `<span class="user-role-tag" style="background:#F3F1EC; color:var(--text-main);">${a.status}</span>`
                 }
               </div>
             </div>
-            <div style="font-size:13px; color:var(--text-main); margin-bottom:8px;">${a.description}</div>
+            <div style="font-size:13px; color:var(--text-main); margin-bottom:8px;">${a.description || 'Không có mô tả thêm.'}</div>
             <div style="font-size:12px; background:#FAF9F6; padding:10px; border-radius:var(--radius-sm); border-left:3px solid var(--primary);">
-              <strong>Hướng dẫn của Giáo viên:</strong> ${a.instructions}
+              <strong>Hướng dẫn của Giáo viên:</strong> ${a.instructions || 'Làm theo yêu cầu bài học.'}
             </div>
           </div>
         `).join('');
@@ -639,51 +840,6 @@ window.App = (function() {
       UI.openModal("submission-modal");
     },
 
-    initSubmitForm() {
-      const form = document.getElementById("submission-form");
-      if (!form) return;
-      form.addEventListener("submit", async (e) => {
-        e.preventDefault();
-        const assId = document.getElementById("sub-assignment-id").value;
-        const text = document.getElementById("sub-text-content").value;
-        const fileInput = document.getElementById("sub-file-input");
-        const submitBtn = document.getElementById("btn-submit-work");
-
-        try {
-          submitBtn.disabled = true;
-          submitBtn.innerText = "Đang tải bài nộp lên Google Drive...";
-
-          let fileIds = [];
-          if (fileInput.files.length > 0) {
-            const file = fileInput.files[0];
-            const base64 = await this.fileToBase64(file);
-            const uploadRes = await API.call("submission.uploadFile", {
-              fileName: file.name,
-              mimeType: file.type,
-              base64Content: base64
-            });
-            fileIds.push(uploadRes.file_id);
-          }
-
-          await API.call("submission.create", {
-            assignmentId: assId,
-            textContent: text,
-            submissionType: fileIds.length > 0 ? "Mixed" : "Text",
-            fileIds: fileIds
-          });
-
-          UI.toast("Nộp bài thành công!", "success");
-          UI.closeModal("submission-modal");
-          Router.loadViewData("dashboard");
-        } catch (err) {
-          // Toast handled
-        } finally {
-          submitBtn.disabled = false;
-          submitBtn.innerText = "Nộp bài chính thức";
-        }
-      });
-    },
-
     fileToBase64(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -695,7 +851,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 9. MODULE: GRADING & ANNOTATION (TEACHER)
+  // 9. MODULE: GRADING (TEACHER)
   // ==========================================
   const Grading = {
     init() {
@@ -737,7 +893,7 @@ window.App = (function() {
           UI.closeModal("grading-modal");
           Router.loadViewData("dashboard");
         } catch (err) {
-          // Toast handled
+          // Handled
         }
       });
     },
@@ -773,7 +929,7 @@ window.App = (function() {
         }
 
         selector.innerHTML = `
-          <select id="flashcard-deck-select" style="padding:6px 12px; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:13px;">
+          <select id="flashcard-deck-select" class="form-select" style="width:auto; display:inline-block;">
             ${decks.map(d => `<option value="${d.deck_id}">${d.title} (${d.hsk_level})</option>`).join('')}
           </select>
         `;
@@ -810,7 +966,7 @@ window.App = (function() {
       controls.style.display = "none";
 
       if (STATE.cachedFlashcards.length === 0 || STATE.currentCardIndex >= STATE.cachedFlashcards.length) {
-        document.getElementById("fc-hanzi").innerText = "Đã hoàn thành ôn tập!";
+        document.getElementById("fc-hanzi").innerText = "Đã hoàn thành!";
         frontPane.querySelector("p").innerText = "Không còn thẻ nào cần ôn hôm nay.";
         return;
       }
@@ -912,6 +1068,48 @@ window.App = (function() {
   };
 
   const Vocabulary = {
+    init() {
+      // 1. Mở modal thêm từ vựng
+      const btnOpenVoc = document.getElementById("btn-add-vocab-modal");
+      if (btnOpenVoc) {
+        btnOpenVoc.addEventListener("click", () => {
+          UI.openModal("vocab-modal");
+        });
+      }
+
+      // 2. Submit form thêm từ vựng
+      const vocForm = document.getElementById("vocab-create-form");
+      if (vocForm) {
+        vocForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("btn-submit-vocab-create");
+          try {
+            btn.disabled = true;
+            btn.innerText = "Đang lưu...";
+            await API.call("vocabulary.create", {
+              simplified: document.getElementById("voc-simplified").value.trim(),
+              pinyin: document.getElementById("voc-pinyin").value.trim(),
+              vietnameseMeaning: document.getElementById("voc-meaning").value.trim(),
+              wordType: document.getElementById("voc-type").value.trim(),
+              hskLevel: document.getElementById("voc-level").value,
+              exampleZh: document.getElementById("voc-example-zh").value.trim(),
+              exampleVi: document.getElementById("voc-example-vi").value.trim(),
+              source: "MANUAL"
+            });
+            UI.toast("Đã thêm từ vựng mới vào sổ tay!", "success");
+            UI.closeModal("vocab-modal");
+            vocForm.reset();
+            this.load();
+          } catch (err) {
+            // Handled
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "Lưu vào sổ từ";
+          }
+        });
+      }
+    },
+
     async load() {
       const tbody = document.getElementById("vocab-table-tbody");
       tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Đang nạp sổ từ vựng...</td></tr>";
@@ -1062,7 +1260,6 @@ window.App = (function() {
         const overview = await API.call("report.getOverview");
         const issues = await API.call("report.getAttentionIssues");
 
-        // Attention list
         const issuesBox = document.getElementById("report-attention-list");
         if (issues.length === 0) {
           issuesBox.innerHTML = "<p style='color:var(--jade-green); font-size:13px;'>Học sinh nắm chắc toàn bộ kiến thức, không phát hiện lỗ hổng lớn.</p>";
@@ -1075,7 +1272,6 @@ window.App = (function() {
           `).join('');
         }
 
-        // Render Radar Chart for Skills
         const ctxRadar = document.getElementById("chart-skills-radar").getContext("2d");
         if (this.radarChart) this.radarChart.destroy();
         this.radarChart = new Chart(ctxRadar, {
@@ -1096,7 +1292,6 @@ window.App = (function() {
           }
         });
 
-        // Render Donut Chart for Tasks
         const ctxDonut = document.getElementById("chart-completion-donut").getContext("2d");
         if (this.donutChart) this.donutChart.destroy();
         this.donutChart = new Chart(ctxDonut, {
@@ -1153,18 +1348,20 @@ window.App = (function() {
     Auth.init();
     PinyinEngine.init();
     Router.init();
-    Assignments.initSubmitForm();
+    Courses.init();
+    Assignments.init();
     Grading.init();
     Flashcard.initEvents();
     Dictionary.init();
+    Vocabulary.init();
     Journal.init();
   }
 
-  // Public Interface
   return {
     init,
     UI,
     Router,
+    Courses,
     Assignments,
     Grading,
     Flashcard,
@@ -1173,7 +1370,7 @@ window.App = (function() {
   };
 })();
 
-// Launch application on DOM ready
+// Kích hoạt khi DOM tải xong
 document.addEventListener("DOMContentLoaded", () => {
   App.init();
 });
