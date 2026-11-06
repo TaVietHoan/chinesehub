@@ -1139,3 +1139,37 @@
       </div>
       <div id="grading-submission-summary" style="margin-bottom:16px; background:#FAF9F6; padding:12px; border-radius:var(--radius-sm); font-size:13px; border:1px solid var(--border-color);"></div>
       <form id="grading-form">
+        <input type="hidden" id="grade-sub-id">
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
+          <div class="form-group">
+            <label>Tổng điểm số (thang 100)</label>
+            <input type="number" id="grade-total-score" min="0" max="100" required class="form-input" placeholder="VD: 85">
+          </div>
+          <div class="form-group">
+            <label>Ngữ pháp (Grammar /10)</label>
+            <input type="number" id="grade-rubric-grammar" min="0" max="10" value="8" class="form-input">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Nhận xét chi tiết của Lão Sư</label>
+          <textarea id="grade-feedback-text" rows="3" class="form-textarea pinyin-enabled" placeholder="Ghi chú nhận xét..."></textarea>
+        </div>
+
+        <div style="border-top:1px dashed var(--border-color); padding-top:12px; margin-bottom:14px;">
+          <h4 style="font-size:13px; font-weight:700; margin-bottom:8px; color:var(--primary);">Trích xuất lỗi sai vào Sổ Lỗi (Error Notebook)</h4>
+          <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:8px;">
+            <input type="text" id="grade-err-wrong" placeholder="Câu học sinh viết sai..." class="form-input pinyin-enabled">
+            <input type="text" id="grade-err-correct" placeholder="Câu sửa chuẩn xác..." class="form-input pinyin-enabled">
+          </div>
+          <input type="text" id="grade-err-exp" placeholder="Giải thích lý do sai..." class="form-input pinyin-enabled">
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;">Lưu kết quả & Trả bài</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- APPLICATION LOGIC SCRIPT -->
+  <script src="app.js"></script>
+</body>
+</html>
