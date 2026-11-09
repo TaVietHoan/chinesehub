@@ -1,12 +1,7 @@
 /**
  * ============================================================================
  * CHINESE LEARNING HUB - FRONTEND APPLICATION CORE (app.js)
- * Version: 2.0.0 (High Performance - Chinese Aesthetic Edition)
- * Highlights: 
- *   - Offline/IndexedDB 12k Word Dictionary Engine (Instant 0ms lookup)
- *   - Global Floating & Accessible Pinyin IME (Unblocked in Modals)
- *   - Hotkey Switcher: [Ctrl+Shift] or [Alt+Z]
- *   - Plaintext Authentication Bridge
+ * Version: 2.1.0 (Imperial Modern Edition - Multi-Media & Dual Dictionary)
  * ============================================================================
  */
 
@@ -14,10 +9,10 @@ window.App = (function() {
   'use strict';
 
   // ==========================================
-  // 1. CONFIGURATION & STATE
+  // 1. CẤU HÌNH & TRẠNG THÁI HỆ THỐNG
   // ==========================================
   const CONFIG = {
-    // Dán URL Web App của Google Apps Script của bạn vào đây (đuôi /exec)
+    // URL Web App Google Apps Script của bạn (kết thúc bằng /exec)
     API_URL: "https://script.google.com/macros/s/AKfycbyDD9DjMYFx9YiCRTmCpkSQvlz1-OgMR703Oa1dXSlfjAePJw0F3htejYnD3ZG8yX0W5g/exec",
     STORAGE_KEYS: {
       TOKEN: "clh_auth_token",
@@ -25,7 +20,7 @@ window.App = (function() {
       IME_MODE: "clh_ime_mode"
     },
     INDEXED_DB: {
-      NAME: "CLH_DictionaryDB",
+      NAME: "CLH_DictionaryDB_v2",
       VERSION: 1,
       STORE_NAME: "words"
     }
@@ -36,6 +31,7 @@ window.App = (function() {
     user: JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.USER) || "null"),
     currentView: "dashboard",
     imeMode: localStorage.getItem(CONFIG.STORAGE_KEYS.IME_MODE) || "ZH",
+    dictMode: "ZH_VI", // "ZH_VI" (Trung -> Việt) hoặc "VI_ZH" (Việt -> Trung)
     activeCourse: null,
     cachedFlashcards: [],
     currentCardIndex: 0,
@@ -45,7 +41,100 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 2. RESILIENT API BRIDGE (JSON over POST)
+  // 2. HELPER: ĐỊNH DẠNG NGÀY GIỜ & XỬ LÝ DỮ LIỆU
+  // ==========================================
+  const Utils = {
+    /**
+     * Khắc phục triệt để lỗi hiển thị ngày ISO UTC
+     * Trả về định dạng: DD/MM/YYYY
+     */
+    formatDateVN(dateStr) {
+      if (!dateStr) return "Chưa cập nhật";
+      try {
+        const str = String(dateStr).trim();
+        // Nếu là dạng chuỗi YYYY-MM-DD
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+          const parts = str.split("-");
+          return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        const d = new Date(str);
+        if (isNaN(d.getTime())) return str;
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        return `${day}/${month}/${year}`;
+      } catch (_) {
+        return String(dateStr);
+      }
+    },
+
+    /**
+     * Khắc phục triệt để lỗi Google Sheets epoch 1899-12-30T...
+     * Trả về định dạng: HH:mm (VD: 19:30)
+     */
+    formatTimeVN(timeStr) {
+      if (!timeStr) return "";
+      try {
+        const str = String(timeStr).trim();
+        // Nếu là dạng HH:mm
+        if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(str)) {
+          const parts = str.split(":");
+          return `${parts[0].padStart(2, "0")}:${parts[1]}`;
+        }
+        // Nếu là dạng ISO có chứa 1899 hoặc Date string
+        const d = new Date(str);
+        if (!isNaN(d.getTime())) {
+          const hours = String(d.getHours()).padStart(2, "0");
+          const mins = String(d.getMinutes()).padStart(2, "0");
+          return `${hours}:${mins}`;
+        }
+        return str;
+      } catch (_) {
+        return String(timeStr);
+      }
+    },
+
+    /**
+     * Hiển thị ngày giờ kết hợp: DD/MM/YYYY HH:mm
+     */
+    formatDateTimeVN(isoStr) {
+      if (!isoStr) return "";
+      try {
+        const d = new Date(isoStr);
+        if (isNaN(d.getTime())) return isoStr;
+        const day = String(d.getDate()).padStart(2, "0");
+        const month = String(d.getMonth() + 1).padStart(2, "0");
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, "0");
+        const mins = String(d.getMinutes()).padStart(2, "0");
+        return `${day}/${month}/${year} ${hours}:${mins}`;
+      } catch (_) {
+        return isoStr;
+      }
+    },
+
+    fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = error => reject(error);
+      });
+    },
+
+    escapeHtml(str) {
+      if (!str) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+    }
+  };
+
+  // ==========================================
+  // 3. API BRIDGE (JSON over POST)
   // ==========================================
   const API = {
     async call(action, payload = {}) {
@@ -89,7 +178,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 3. ULTRA-FAST INDEXED-DB DICTIONARY CACHE
+  // 4. ULTRA-FAST INDEXED-DB DICTIONARY (2 CHIỀU RIÊNG BIỆT)
   // ==========================================
   const LocalDictionary = {
     async init() {
@@ -97,8 +186,7 @@ window.App = (function() {
         await this.openDB();
         const count = await this.countWords();
         if (count === 0) {
-          console.log("[LocalDictionary] Đang tải đồng bộ từ điển từ Google Sheets...");
-          UI.toast("Đang tải dữ liệu từ điển Hán ngữ...", "info");
+          console.log("[LocalDictionary] Đang nạp dữ liệu từ điển Hán ngữ...");
           await this.syncFromBackend();
         } else {
           console.log(`[LocalDictionary] Đã nạp ${count} từ vựng từ IndexedDB.`);
@@ -120,6 +208,7 @@ window.App = (function() {
             store.createIndex("simplified", "s", { unique: false });
             store.createIndex("pinyin", "p", { unique: false });
             store.createIndex("cleanPinyin", "cp", { unique: false });
+            store.createIndex("meaning", "m", { unique: false });
           }
         };
         request.onsuccess = (e) => {
@@ -150,7 +239,6 @@ window.App = (function() {
         const store = tx.objectStore(CONFIG.INDEXED_DB.STORE_NAME);
 
         items.forEach(item => {
-          // Chuẩn hóa pinyin không dấu để gõ phím
           const cleanPinyin = (item.p || "")
             .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
             .replace(/[1-5]/g, "")
@@ -173,8 +261,7 @@ window.App = (function() {
         });
 
         await new Promise((res) => { tx.oncomplete = () => res(); });
-        console.log(`[LocalDictionary] Đã đồng bộ thành công ${items.length} từ vào máy cá nhân.`);
-        UI.toast(`Đồng bộ hoàn tất ${items.length} mục từ điển!`, "success");
+        console.log(`[LocalDictionary] Đã đồng bộ ${items.length} từ vào IndexedDB.`);
         await this.buildMemoryPinyinIndex();
       } catch (err) {
         console.error("Lỗi sync từ điển:", err);
@@ -205,11 +292,10 @@ window.App = (function() {
       };
     },
 
-    async search(query) {
+    async search(query, mode = "ZH_VI") {
       const q = (query || "").trim().toLowerCase();
       if (!q) return [];
 
-      // Tra cứu trực tiếp trong IndexedDB cực nhanh (dưới 5ms cho 12.000 dòng)
       return new Promise((resolve) => {
         if (!STATE.dbInstance) return resolve([]);
         const tx = STATE.dbInstance.transaction(CONFIG.INDEXED_DB.STORE_NAME, "readonly");
@@ -221,13 +307,31 @@ window.App = (function() {
           const cursor = e.target.result;
           if (cursor && results.length < 35) {
             const item = cursor.value;
-            if (
-              item.s.toLowerCase().includes(q) ||
-              item.p.toLowerCase().includes(q) ||
-              item.cp.includes(q) ||
-              item.m.toLowerCase().includes(q) ||
-              item.sv.toLowerCase().includes(q)
-            ) {
+            let match = false;
+
+            if (mode === "ZH_VI") {
+              // Tra cứu theo chữ Hán, Pinyin, Pinyin sạch, âm Hán Việt
+              if (
+                item.s.toLowerCase().includes(q) ||
+                (item.t && item.t.toLowerCase().includes(q)) ||
+                item.p.toLowerCase().includes(q) ||
+                item.cp.includes(q) ||
+                item.sv.toLowerCase().includes(q)
+              ) {
+                match = true;
+              }
+            } else {
+              // Tra cứu Việt -> Trung: theo nghĩa tiếng Việt, dịch câu ví dụ
+              if (
+                item.m.toLowerCase().includes(q) ||
+                item.exVi.toLowerCase().includes(q) ||
+                item.sv.toLowerCase().includes(q)
+              ) {
+                match = true;
+              }
+            }
+
+            if (match) {
               results.push({
                 simplified: item.s,
                 traditional: item.t,
@@ -251,10 +355,9 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 4. BUILT-IN CHINESE PINYIN IME (GLOBAL ACCESSIBLE)
+  // 5. BUILT-IN CHINESE PINYIN IME (GLOBAL ACCESSIBLE)
   // ==========================================
   const PinyinEngine = {
-    // Bộ từ vựng cơ sở mặc định phòng khi chưa sync xong
     FALLBACK_MAP: {
       "ni": ["你", "呢", "拟", "泥"],
       "hao": ["好", "号", "毫", "耗"],
@@ -292,7 +395,6 @@ window.App = (function() {
     selectedCandidateIdx: 0,
 
     init() {
-      // Thiết lập nút bấm ở Header và Floating Widget
       const applyMode = (mode) => {
         STATE.imeMode = mode;
         localStorage.setItem(CONFIG.STORAGE_KEYS.IME_MODE, mode);
@@ -308,7 +410,7 @@ window.App = (function() {
         });
 
         if (mode === "ZH") {
-          UI.toast("Đã bật Bộ gõ Pinyin (中文)", "info");
+          UI.toast("Đã kích hoạt Bộ gõ Pinyin (中文)", "info");
         } else {
           this.closePopover();
           UI.toast("Đã chuyển về Bộ gõ Tiếng Việt", "info");
@@ -328,7 +430,6 @@ window.App = (function() {
         this.handleKeyDown(e);
       });
 
-      // Cập nhật giao diện trạng thái ban đầu
       applyMode(STATE.imeMode);
     },
 
@@ -396,7 +497,6 @@ window.App = (function() {
     },
 
     updateCandidates() {
-      // Tra trong 12k từ Map trước, nếu chưa có thì lấy fallback
       let candidates = STATE.pinyinIndexMap.get(this.currentBuffer);
       if (!candidates || candidates.length === 0) {
         candidates = this.FALLBACK_MAP[this.currentBuffer] || [];
@@ -405,7 +505,7 @@ window.App = (function() {
       if (candidates.length === 0) {
         this.candidateList = [this.currentBuffer];
       } else {
-        this.candidateList = candidates.slice(0, 9); // Giới hạn 9 ứng viên
+        this.candidateList = candidates.slice(0, 9);
       }
       this.selectedCandidateIdx = 0;
       this.renderPopover();
@@ -423,7 +523,7 @@ window.App = (function() {
       popover.style.top = (window.scrollY + rect.bottom + 6) + "px";
       popover.style.left = (window.scrollX + Math.max(10, rect.left)) + "px";
 
-      syllableText.innerText = `Pinyin: ${this.currentBuffer} (Phím tắt: [1-9] hoặc [Cách])`;
+      syllableText.innerText = `Pinyin: ${this.currentBuffer} (Phím [1-9] hoặc [Cách])`;
       candidatesList.innerHTML = this.candidateList.map((cand, idx) => `
         <span class="ime-candidate-item ${idx === this.selectedCandidateIdx ? 'selected' : ''}" data-idx="${idx}">
           <span style="font-size:11px; opacity:0.7;">${idx + 1}.</span>${cand}
@@ -462,7 +562,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 5. AUTHENTICATION MODULE
+  // 6. AUTHENTICATION MODULE
   // ==========================================
   const Auth = {
     init() {
@@ -549,7 +649,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 6. VIEW ROUTER & NAVIGATION
+  // 7. ROUTER & NAVIGATION
   // ==========================================
   const Router = {
     init() {
@@ -587,7 +687,7 @@ window.App = (function() {
         assignments: "Quản lý Bài tập & Nộp bài (作业中心)",
         "error-notebook": "Sổ lỗi sai (错题本)",
         "learning-journal": "Nhật ký phản tư học tập (学习反思)",
-        dictionary: "Tra cứu Từ điển Hán - Việt (汉越词典)",
+        dictionary: "Tra cứu Từ điển Hán - Việt 2 Chiều (汉越词典)",
         vocabulary: "Sổ từ vựng tích lũy (词汇笔记)",
         flashcards: "Học từ vựng Flashcards SM-2 (智能生词卡)",
         reports: "Báo cáo Đánh giá Tiến trình (学情报告)"
@@ -616,6 +716,9 @@ window.App = (function() {
         case "learning-journal":
           Journal.load();
           break;
+        case "dictionary":
+          Dictionary.initView();
+          break;
         case "vocabulary":
           Vocabulary.load();
           break;
@@ -630,7 +733,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 7. MODULE: DASHBOARD
+  // 8. DASHBOARD MODULE (FIX DATE/TIME)
   // ==========================================
   const Dashboard = {
     async load() {
@@ -640,16 +743,25 @@ window.App = (function() {
           
           document.getElementById("stat-completed-lessons").innerText = `${data.totalCompletedLessons}/${data.totalPlannedLessons}`;
           document.getElementById("stat-pending-tasks").innerText = data.pendingAssignments ? data.pendingAssignments.length : 0;
+          document.getElementById("stat-avg-score").innerText = data.averageScore || "0.0";
           document.getElementById("stat-due-flashcards").innerText = data.dueFlashcardsCount || 0;
 
           const meetBtn = document.getElementById("btn-join-meet");
           if (data.upcomingLesson && data.upcomingLesson.meet_url) {
             meetBtn.href = data.upcomingLesson.meet_url;
             meetBtn.style.display = "inline-flex";
+
+            const cleanDate = Utils.formatDateVN(data.upcomingLesson.lesson_date);
+            const cleanStart = Utils.formatTimeVN(data.upcomingLesson.start_time);
+            const cleanEnd = Utils.formatTimeVN(data.upcomingLesson.end_time);
+
             document.getElementById("dash-upcoming-lesson-info").innerHTML = `
-              <strong>${data.upcomingLesson.lesson_name}</strong><br>
-              <span style="color:var(--text-muted);">Thời gian: ${data.upcomingLesson.lesson_date} | ${data.upcomingLesson.start_time} - ${data.upcomingLesson.end_time}</span><br>
-              <p style="margin-top:6px;">Chủ đề: <em>${data.upcomingLesson.topic || 'Chưa cập nhật'}</em></p>
+              <div style="font-size:15px; font-weight:700; color:var(--primary); margin-bottom:4px;">${data.upcomingLesson.lesson_name}</div>
+              <div style="font-size:13px; color:var(--text-muted); margin-bottom:8px;">
+                <i data-lucide="calendar" style="width:14px; height:14px; display:inline-block; vertical-align:middle;"></i> <strong>${cleanDate}</strong> | 
+                <i data-lucide="clock" style="width:14px; height:14px; display:inline-block; vertical-align:middle;"></i> <strong>${cleanStart} - ${cleanEnd}</strong>
+              </div>
+              <p style="font-size:13px; color:var(--text-main);">Chủ đề: <em>${data.upcomingLesson.topic || 'Chưa cập nhật'}</em></p>
             `;
           } else {
             meetBtn.style.display = "none";
@@ -662,24 +774,29 @@ window.App = (function() {
               <tr>
                 <td><strong>${item.assignment.title}</strong></td>
                 <td>Lần ${item.submission.attempt_number}</td>
-                <td>${new Date(item.submission.submitted_at).toLocaleDateString("vi-VN")}</td>
+                <td>${Utils.formatDateTimeVN(item.submission.submitted_at)}</td>
                 <td><span class="chinese-seal-tag">${item.submission.status}</span></td>
-                <td><strong>${item.grade ? item.grade.total_score + ' / ' + item.grade.max_score : 'Chờ chấm'}</strong></td>
+                <td><strong>${item.grade ? item.grade.total_score + ' / ' + item.grade.max_score : '<span style="color:var(--warning);">Chờ chấm</span>'}</strong></td>
               </tr>
             `).join('');
           } else {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Chưa có bài nộp nào.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">Chưa có bài nộp nào.</td></tr>`;
           }
 
         } else {
+          // TEACHER DASHBOARD
           const data = await API.call("dashboard.getTeacher");
           document.getElementById("stat-completed-lessons").innerText = data.activeCoursesCount + " Lớp";
           document.getElementById("stat-pending-tasks").innerText = data.pendingGradingCount;
+          document.getElementById("stat-avg-score").innerText = "--";
           document.getElementById("stat-due-flashcards").innerText = data.totalStudentsCount + " Học sinh";
 
           document.getElementById("btn-join-meet").style.display = "none";
           document.getElementById("dash-upcoming-lesson-info").innerHTML = data.upcomingLessons && data.upcomingLessons.length > 0
-            ? data.upcomingLessons.map(l => `<div>• <strong>${l.lesson_name}</strong> (${l.lesson_date})</div>`).join('')
+            ? data.upcomingLessons.map(l => `
+                <div style="padding:6px 0; border-bottom:1px dashed var(--border-color);">
+                  • <strong>${l.lesson_name}</strong> (${Utils.formatDateVN(l.lesson_date)} | ${Utils.formatTimeVN(l.start_time)} - ${Utils.formatTimeVN(l.end_time)})
+                </div>`).join('')
             : "Không có buổi học sắp tới.";
 
           const tbody = document.getElementById("dash-submissions-tbody");
@@ -688,13 +805,13 @@ window.App = (function() {
               <tr>
                 <td><strong>${item.assignmentTitle}</strong></td>
                 <td>Lần ${item.attemptNumber}</td>
-                <td>${new Date(item.submittedAt).toLocaleDateString("vi-VN")}</td>
+                <td>${Utils.formatDateTimeVN(item.submittedAt)}</td>
                 <td><span style="color:var(--warning); font-weight:700;">Cần chấm điểm</span></td>
-                <td><button class="btn btn-primary btn-sm" onclick="App.Grading.openGradeModal('${item.submissionId}')">Chấm bài</button></td>
+                <td><button class="btn btn-primary btn-sm" onclick="App.Grading.openGradeModal('${item.submissionId}')">Chấm bài ngay</button></td>
               </tr>
             `).join('');
           } else {
-            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Không có bài tập nào cần chấm.</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">Không có bài tập nào cần chấm. Tuyệt vời!</td></tr>`;
           }
         }
         lucide.createIcons();
@@ -705,7 +822,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 8. MODULE: COURSES & LESSONS
+  // 9. COURSES & LESSONS (FORMAT DATE/TIME CHUẨN)
   // ==========================================
   const Courses = {
     init() {
@@ -736,7 +853,7 @@ window.App = (function() {
               objectives: document.getElementById("les-objectives").value.trim(),
               meetUrl: document.getElementById("les-meet-url").value.trim()
             });
-            UI.toast("Đã tạo buổi học mới!", "success");
+            UI.toast("Đã lên lịch buổi học mới thành công!", "success");
             UI.closeModal("lesson-modal");
             lesForm.reset();
             this.load();
@@ -787,7 +904,7 @@ window.App = (function() {
 
     async load() {
       const container = document.getElementById("courses-lessons-container");
-      container.innerHTML = "<p>Đang tải danh sách khóa học...</p>";
+      container.innerHTML = "<p style='color:var(--text-muted);'>Đang tải danh sách khóa học...</p>";
       try {
         const courses = await API.call("course.list");
         if (courses.length === 0) {
@@ -807,7 +924,7 @@ window.App = (function() {
               <div>
                 <h3 style="font-size:18px; font-weight:700; color:var(--primary);">${STATE.activeCourse.course_name}</h3>
                 <span class="chinese-seal-tag">${STATE.activeCourse.hsk_level}</span>
-                <span style="font-size:12px; color:var(--text-muted); margin-left:8px;">Khai giảng: ${STATE.activeCourse.start_date}</span>
+                <span style="font-size:13px; color:var(--text-muted); margin-left:8px;">Khai giảng: <strong>${Utils.formatDateVN(STATE.activeCourse.start_date)}</strong></span>
               </div>
             </div>
             
@@ -817,7 +934,7 @@ window.App = (function() {
                   <tr>
                     <th>Buổi</th>
                     <th>Chủ đề & Mục tiêu trọng tâm</th>
-                    <th>Thời gian</th>
+                    <th>Thời gian học</th>
                     <th>Trạng thái</th>
                     <th>Tác vụ</th>
                   </tr>
@@ -830,18 +947,22 @@ window.App = (function() {
                         <strong>${les.lesson_name}</strong><br>
                         <span style="font-size:12px; color:var(--text-muted);">${les.topic || 'Chưa có chủ đề'}</span>
                       </td>
-                      <td>${les.lesson_date} (${les.start_time})</td>
+                      <td>
+                        <strong>${Utils.formatDateVN(les.lesson_date)}</strong><br>
+                        <span style="font-size:12px; color:var(--text-muted);">${Utils.formatTimeVN(les.start_time)} - ${Utils.formatTimeVN(les.end_time)}</span>
+                      </td>
                       <td><span class="chinese-seal-tag">${les.status}</span></td>
                       <td>
-                        ${les.meet_url ? `<a href="${les.meet_url}" target="_blank" class="btn btn-outline btn-sm">Vào lớp học</a>` : ''}
+                        ${les.meet_url ? `<a href="${les.meet_url}" target="_blank" class="btn btn-outline btn-sm"><i data-lucide="video"></i> Vào học</a>` : ''}
                       </td>
                     </tr>
-                  `).join('') : `<tr><td colspan="5" style="text-align:center; color:var(--text-muted);">Chưa có buổi học nào trong khóa.</td></tr>`}
+                  `).join('') : `<tr><td colspan="5" style="text-align:center; color:var(--text-muted); padding:20px;">Chưa có buổi học nào trong khóa.</td></tr>`}
                 </tbody>
               </table>
             </div>
           </div>
         `;
+        lucide.createIcons();
       } catch (e) {
         container.innerHTML = "<p style='color:var(--danger);'>Không thể tải thông tin khóa học.</p>";
       }
@@ -849,19 +970,80 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 9. MODULE: ASSIGNMENTS & SUBMISSION
+  // 10. ASSIGNMENTS & SUBMISSION (FULL MULTI-MEDIA)
   // ==========================================
   const Assignments = {
+    tempAssignmentFiles: [],
+    tempAssignmentLinks: [],
+    tempSubmissionFiles: [],
+    tempSubmissionLinks: [],
+
     init() {
+      // Nút mở modal giao bài tập
       const btnOpenAss = document.getElementById("btn-create-assignment-modal");
       if (btnOpenAss) {
         btnOpenAss.addEventListener("click", () => {
           const nextWeek = new Date(Date.now() + 7 * 86400000).toISOString().split("T")[0];
           document.getElementById("ass-deadline").value = nextWeek;
+          this.tempAssignmentFiles = [];
+          this.tempAssignmentLinks = [];
+          this.renderAssignmentAttachmentsList();
+          this.renderAssignmentLinksList();
           UI.openModal("assignment-modal");
         });
       }
 
+      // Xử lý đính kèm file trong tạo bài tập
+      const assFileInput = document.getElementById("ass-file-input");
+      if (assFileInput) {
+        assFileInput.addEventListener("change", async (e) => {
+          if (!e.target.files || e.target.files.length === 0) return;
+          const file = e.target.files[0];
+          try {
+            UI.toast(`Đang tải file "${file.name}" lên Google Drive...`, "info");
+            const base64 = await Utils.fileToBase64(file);
+            const uploaded = await API.call("file.upload", {
+              fileName: file.name,
+              mimeType: file.type,
+              base64Content: base64,
+              folderName: "Assignment_Materials"
+            });
+            this.tempAssignmentFiles.push({
+              fileId: uploaded.file_id,
+              fileName: uploaded.file_name,
+              fileUrl: uploaded.file_url,
+              mimeType: uploaded.mime_type
+            });
+            this.renderAssignmentAttachmentsList();
+            UI.toast("Đã đính kèm file thành công!", "success");
+            assFileInput.value = "";
+          } catch (err) {
+            UI.toast("Tải file thất bại", "error");
+          }
+        });
+      }
+
+      // Xử lý thêm Link trong tạo bài tập
+      const btnAddAssLink = document.getElementById("btn-add-ass-link");
+      if (btnAddAssLink) {
+        btnAddAssLink.addEventListener("click", () => {
+          const titleInput = document.getElementById("ass-link-title");
+          const urlInput = document.getElementById("ass-link-url");
+          const title = titleInput.value.trim();
+          const url = urlInput.value.trim();
+
+          if (!url) {
+            UI.toast("Vui lòng nhập đường dẫn URL!", "error");
+            return;
+          }
+          this.tempAssignmentLinks.push({ title: title || url, url: url });
+          titleInput.value = "";
+          urlInput.value = "";
+          this.renderAssignmentLinksList();
+        });
+      }
+
+      // Submit Form Giao bài tập
       const assForm = document.getElementById("assignment-create-form");
       if (assForm) {
         assForm.addEventListener("submit", async (e) => {
@@ -869,7 +1051,7 @@ window.App = (function() {
           const btn = document.getElementById("btn-submit-assignment-create");
           try {
             btn.disabled = true;
-            btn.innerText = "Đang xuất bản...";
+            btn.innerText = "Đang xuất bản bài tập...";
             await API.call("assignment.create", {
               courseId: STATE.activeCourse ? STATE.activeCourse.course_id : "",
               title: document.getElementById("ass-title").value.trim(),
@@ -879,11 +1061,15 @@ window.App = (function() {
               instructions: document.getElementById("ass-instructions").value.trim(),
               maxScore: Number(document.getElementById("ass-max-score").value),
               maxAttempts: Number(document.getElementById("ass-max-attempts").value),
+              attachmentFiles: this.tempAssignmentFiles,
+              externalLinks: this.tempAssignmentLinks,
               publish: true
             });
             UI.toast("Đã giao bài tập mới thành công!", "success");
             UI.closeModal("assignment-modal");
             assForm.reset();
+            this.tempAssignmentFiles = [];
+            this.tempAssignmentLinks = [];
             this.load();
           } catch (err) {
           } finally {
@@ -893,41 +1079,89 @@ window.App = (function() {
         });
       }
 
+      // Học sinh nộp bài: Thêm Link
+      const btnAddSubLink = document.getElementById("btn-add-sub-link");
+      if (btnAddSubLink) {
+        btnAddSubLink.addEventListener("click", () => {
+          const titleInput = document.getElementById("sub-link-title");
+          const urlInput = document.getElementById("sub-link-url");
+          const title = titleInput.value.trim();
+          const url = urlInput.value.trim();
+
+          if (!url) {
+            UI.toast("Vui lòng cung cấp link bài nộp!", "error");
+            return;
+          }
+          this.tempSubmissionLinks.push({ title: title || url, url: url });
+          titleInput.value = "";
+          urlInput.value = "";
+          this.renderSubmissionLinksList();
+        });
+      }
+
+      // Học sinh nộp bài: Upload File
+      const subFileInput = document.getElementById("sub-file-input");
+      if (subFileInput) {
+        subFileInput.addEventListener("change", async (e) => {
+          if (!e.target.files || e.target.files.length === 0) return;
+          const file = e.target.files[0];
+          try {
+            UI.toast(`Đang tải file bài làm "${file.name}"...`, "info");
+            const base64 = await Utils.fileToBase64(file);
+            const uploaded = await API.call("file.upload", {
+              fileName: file.name,
+              mimeType: file.type,
+              base64Content: base64,
+              folderName: STATE.user.userId
+            });
+            this.tempSubmissionFiles.push({
+              fileId: uploaded.file_id,
+              fileName: uploaded.file_name,
+              fileUrl: uploaded.file_url,
+              mimeType: uploaded.mime_type
+            });
+            this.renderSubmissionFilesList();
+            UI.toast("Đã tải lên bài làm!", "success");
+            subFileInput.value = "";
+          } catch (err) {
+            UI.toast("Lỗi tải file bài làm", "error");
+          }
+        });
+      }
+
+      // Submit Form Nộp bài
       const subForm = document.getElementById("submission-form");
       if (subForm) {
         subForm.addEventListener("submit", async (e) => {
           e.preventDefault();
           const assId = document.getElementById("sub-assignment-id").value;
           const text = document.getElementById("sub-text-content").value;
-          const fileInput = document.getElementById("sub-file-input");
           const submitBtn = document.getElementById("btn-submit-work");
+
+          if (!text && this.tempSubmissionFiles.length === 0 && this.tempSubmissionLinks.length === 0) {
+            UI.toast("Vui lòng nhập văn bản, đính kèm file hoặc gửi link bài làm!", "error");
+            return;
+          }
 
           try {
             submitBtn.disabled = true;
-            submitBtn.innerText = "Đang tải bài nộp lên Google Drive...";
+            submitBtn.innerText = "Đang nộp bài...";
 
-            let fileIds = [];
-            if (fileInput.files.length > 0) {
-              const file = fileInput.files[0];
-              const base64 = await this.fileToBase64(file);
-              const uploadRes = await API.call("submission.uploadFile", {
-                fileName: file.name,
-                mimeType: file.type,
-                base64Content: base64
-              });
-              fileIds.push(uploadRes.file_id);
-            }
+            const fileIds = this.tempSubmissionFiles.map(f => f.fileId);
 
             await API.call("submission.create", {
               assignmentId: assId,
               textContent: text,
-              submissionType: fileIds.length > 0 ? "Mixed" : "Text",
-              fileIds: fileIds
+              submissionType: fileIds.length > 0 ? "Mixed" : (this.tempSubmissionLinks.length > 0 ? "Link" : "Text"),
+              fileIds: fileIds,
+              externalLinks: this.tempSubmissionLinks
             });
 
             UI.toast("Nộp bài thành công!", "success");
             UI.closeModal("submission-modal");
             subForm.reset();
+            this.tempSubmissionFiles = [];
+            this.tempSubmissionLinks = [];
             Router.loadViewData("dashboard");
           } catch (err) {
           } finally {
@@ -938,9 +1172,81 @@ window.App = (function() {
       }
     },
 
+    renderAssignmentAttachmentsList() {
+      const container = document.getElementById("ass-files-preview-list");
+      if (!container) return;
+      container.innerHTML = this.tempAssignmentFiles.map((f, idx) => `
+        <div class="attachment-pill">
+          <i data-lucide="paperclip" style="width:14px; height:14px;"></i>
+          <span>${Utils.escapeHtml(f.fileName)}</span>
+          <span style="cursor:pointer; color:var(--danger); margin-left:6px;" onclick="App.Assignments.removeAssignmentFile(${idx})">✕</span>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    },
+
+    removeAssignmentFile(idx) {
+      this.tempAssignmentFiles.splice(idx, 1);
+      this.renderAssignmentAttachmentsList();
+    },
+
+    renderAssignmentLinksList() {
+      const container = document.getElementById("ass-links-preview-list");
+      if (!container) return;
+      container.innerHTML = this.tempAssignmentLinks.map((l, idx) => `
+        <div class="attachment-pill">
+          <i data-lucide="link-2" style="width:14px; height:14px;"></i>
+          <a href="${l.url}" target="_blank" style="color:inherit; text-decoration:none;">${Utils.escapeHtml(l.title)}</a>
+          <span style="cursor:pointer; color:var(--danger); margin-left:6px;" onclick="App.Assignments.removeAssignmentLink(${idx})">✕</span>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    },
+
+    removeAssignmentLink(idx) {
+      this.tempAssignmentLinks.splice(idx, 1);
+      this.renderAssignmentLinksList();
+    },
+
+    renderSubmissionFilesList() {
+      const container = document.getElementById("sub-files-preview-list");
+      if (!container) return;
+      container.innerHTML = this.tempSubmissionFiles.map((f, idx) => `
+        <div class="attachment-pill">
+          <i data-lucide="file-check" style="width:14px; height:14px;"></i>
+          <span>${Utils.escapeHtml(f.fileName)}</span>
+          <span style="cursor:pointer; color:var(--danger); margin-left:6px;" onclick="App.Assignments.removeSubmissionFile(${idx})">✕</span>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    },
+
+    removeSubmissionFile(idx) {
+      this.tempSubmissionFiles.splice(idx, 1);
+      this.renderSubmissionFilesList();
+    },
+
+    renderSubmissionLinksList() {
+      const container = document.getElementById("sub-links-preview-list");
+      if (!container) return;
+      container.innerHTML = this.tempSubmissionLinks.map((l, idx) => `
+        <div class="attachment-pill">
+          <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+          <a href="${l.url}" target="_blank" style="color:inherit;">${Utils.escapeHtml(l.title)}</a>
+          <span style="cursor:pointer; color:var(--danger); margin-left:6px;" onclick="App.Assignments.removeSubmissionLink(${idx})">✕</span>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    },
+
+    removeSubmissionLink(idx) {
+      this.tempSubmissionLinks.splice(idx, 1);
+      this.renderSubmissionLinksList();
+    },
+
     async load() {
       const container = document.getElementById("assignments-list-container");
-      container.innerHTML = "<p>Đang nạp bài tập...</p>";
+      container.innerHTML = "<p style='color:var(--text-muted);'>Đang nạp danh sách bài tập...</p>";
       try {
         if (!STATE.activeCourse) {
           const courses = await API.call("course.list");
@@ -962,24 +1268,60 @@ window.App = (function() {
             <div class="card-header-clean">
               <div>
                 <span class="chinese-seal-tag">${a.assignment_type}</span>
-                <h3 style="font-size:16px; font-weight:700; margin-top:4px; color:var(--text-main);">${a.title}</h3>
-                <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">
-                  Hạn chót: <strong>${a.deadline}</strong> | Điểm tối đa: ${a.max_score}
+                <h3 style="font-size:17px; font-weight:700; margin-top:6px; color:var(--text-main); font-family:var(--font-editorial);">${a.title}</h3>
+                <div style="font-size:12.5px; color:var(--text-muted); margin-top:4px;">
+                  Hạn chót: <strong>${Utils.formatDateVN(a.deadline)}</strong> | Điểm tối đa: <strong>${a.max_score}</strong>
                 </div>
               </div>
               <div>
                 ${STATE.user.role === "STUDENT" 
                   ? `<button class="btn btn-primary btn-sm" onclick="App.Assignments.openSubmitModal('${a.assignment_id}', '${a.title.replace(/'/g, "\\'")}')">Làm & Nộp bài</button>`
-                  : `<span class="chinese-seal-tag" style="background:#EFECE2; color:var(--text-main);">${a.status}</span>`
+                  : `<span class="chinese-seal-tag" style="background:rgba(200, 155, 56, 0.15); color:var(--warm-gold);">${a.status}</span>`
                 }
               </div>
             </div>
-            <div style="font-size:13px; color:var(--text-main); margin-bottom:8px;">${a.description || 'Không có mô tả thêm.'}</div>
-            <div style="font-size:12px; background:var(--surface-parchment); padding:10px 14px; border-radius:var(--radius-sm); border-left:3px solid var(--primary);">
-              <strong>Hướng dẫn của Giáo viên:</strong> ${a.instructions || 'Làm theo yêu cầu bài học.'}
-            </div>
+
+            <div style="font-size:13.5px; color:var(--text-main); margin-bottom:10px;">${a.description || 'Không có mô tả thêm.'}</div>
+            
+            ${a.instructions ? `
+              <div style="font-size:13px; background:var(--surface-parchment); padding:12px 16px; border-radius:var(--radius-sm); border-left:3px solid var(--primary); margin-bottom:12px;">
+                <strong><i data-lucide="info" style="width:14px; height:14px; display:inline-block; vertical-align:middle;"></i> Hướng dẫn của Lão Sư:</strong>
+                <p style="margin-top:4px;">${a.instructions}</p>
+              </div>
+            ` : ''}
+
+            <!-- File đính kèm của đề bài -->
+            ${a.attachmentFilesList && a.attachmentFilesList.length > 0 ? `
+              <div style="margin-top:10px;">
+                <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Tài liệu / Đề bài đính kèm:</span>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+                  ${a.attachmentFilesList.map(f => `
+                    <a href="${f.fileUrl}" target="_blank" class="attachment-pill">
+                      <i data-lucide="paperclip" style="width:14px; height:14px;"></i>
+                      <span>${Utils.escapeHtml(f.fileName)}</span>
+                    </a>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
+
+            <!-- Liên kết đính kèm của đề bài -->
+            ${a.externalLinksList && a.externalLinksList.length > 0 ? `
+              <div style="margin-top:10px;">
+                <span style="font-size:12px; font-weight:700; color:var(--text-muted); text-transform:uppercase;">Liên kết tham khảo:</span>
+                <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:6px;">
+                  ${a.externalLinksList.map(l => `
+                    <a href="${l.url}" target="_blank" class="attachment-pill">
+                      <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+                      <span>${Utils.escapeHtml(l.title)}</span>
+                    </a>
+                  `).join('')}
+                </div>
+              </div>
+            ` : ''}
           </div>
         `).join('');
+        lucide.createIcons();
       } catch (e) {
         container.innerHTML = "<p style='color:var(--danger);'>Lỗi nạp bài tập.</p>";
       }
@@ -989,25 +1331,72 @@ window.App = (function() {
       document.getElementById("sub-assignment-id").value = assignmentId;
       document.getElementById("sub-modal-title").innerText = `Nộp bài: ${title}`;
       document.getElementById("sub-text-content").value = "";
-      document.getElementById("sub-file-input").value = "";
+      this.tempSubmissionFiles = [];
+      this.tempSubmissionLinks = [];
+      this.renderSubmissionFilesList();
+      this.renderSubmissionLinksList();
       UI.openModal("submission-modal");
-    },
-
-    fileToBase64(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result.split(',')[1]);
-        reader.onerror = error => reject(error);
-      });
     }
   };
 
   // ==========================================
-  // 10. MODULE: GRADING (TEACHER)
+  // 11. GRADING MODULE (HỖ TRỢ BÀI MẪU & ĐA PHƯƠNG TIỆN)
   // ==========================================
   const Grading = {
+    tempModelFiles: [],
+    tempModelLinks: [],
+
     init() {
+      // Giáo viên upload file bài mẫu
+      const modelFileInput = document.getElementById("grade-model-file-input");
+      if (modelFileInput) {
+        modelFileInput.addEventListener("change", async (e) => {
+          if (!e.target.files || e.target.files.length === 0) return;
+          const file = e.target.files[0];
+          try {
+            UI.toast(`Đang tải file bài mẫu "${file.name}"...`, "info");
+            const base64 = await Utils.fileToBase64(file);
+            const uploaded = await API.call("file.upload", {
+              fileName: file.name,
+              mimeType: file.type,
+              base64Content: base64,
+              folderName: "Model_Solutions"
+            });
+            this.tempModelFiles.push({
+              fileId: uploaded.file_id,
+              fileName: uploaded.file_name,
+              fileUrl: uploaded.file_url,
+              mimeType: uploaded.mime_type
+            });
+            this.renderModelFilesList();
+            UI.toast("Đã thêm file bài mẫu!", "success");
+            modelFileInput.value = "";
+          } catch (err) {
+            UI.toast("Lỗi tải file bài mẫu", "error");
+          }
+        });
+      }
+
+      // Giáo viên thêm link bài mẫu
+      const btnAddModelLink = document.getElementById("btn-add-model-link");
+      if (btnAddModelLink) {
+        btnAddModelLink.addEventListener("click", () => {
+          const titleInput = document.getElementById("grade-model-link-title");
+          const urlInput = document.getElementById("grade-model-link-url");
+          const title = titleInput.value.trim();
+          const url = urlInput.value.trim();
+
+          if (!url) {
+            UI.toast("Vui lòng nhập URL tài liệu mẫu!", "error");
+            return;
+          }
+          this.tempModelLinks.push({ title: title || url, url: url });
+          titleInput.value = "";
+          urlInput.value = "";
+          this.renderModelLinksList();
+        });
+      }
+
       const form = document.getElementById("grading-form");
       if (!form) return;
       form.addEventListener("submit", async (e) => {
@@ -1016,6 +1405,7 @@ window.App = (function() {
         const totalScore = document.getElementById("grade-total-score").value;
         const grammar = document.getElementById("grade-rubric-grammar").value;
         const feedback = document.getElementById("grade-feedback-text").value;
+        const modelSolutionText = document.getElementById("grade-model-solution-text").value;
 
         const errWrong = document.getElementById("grade-err-wrong").value.trim();
         const errCorrect = document.getElementById("grade-err-correct").value.trim();
@@ -1039,15 +1429,54 @@ window.App = (function() {
             maxScore: 100,
             rubricJson: { Grammar: Number(grammar) },
             feedbackText: feedback,
+            modelSolutionText: modelSolutionText,
+            modelLinks: this.tempModelLinks,
+            modelFiles: this.tempModelFiles,
             errorEntries: errorEntries
           });
 
-          UI.toast("Đã lưu kết quả chấm bài!", "success");
+          UI.toast("Đã lưu kết quả chấm bài và bài mẫu!", "success");
           UI.closeModal("grading-modal");
           Router.loadViewData("dashboard");
         } catch (err) {
         }
       });
+    },
+
+    renderModelFilesList() {
+      const container = document.getElementById("grade-model-files-list");
+      if (!container) return;
+      container.innerHTML = this.tempModelFiles.map((f, idx) => `
+        <div class="attachment-pill">
+          <i data-lucide="file-text" style="width:14px; height:14px;"></i>
+          <span>${Utils.escapeHtml(f.fileName)}</span>
+          <span style="cursor:pointer; color:var(--danger); margin-left:6px;" onclick="App.Grading.removeModelFile(${idx})">✕</span>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    },
+
+    removeModelFile(idx) {
+      this.tempModelFiles.splice(idx, 1);
+      this.renderModelFilesList();
+    },
+
+    renderModelLinksList() {
+      const container = document.getElementById("grade-model-links-list");
+      if (!container) return;
+      container.innerHTML = this.tempModelLinks.map((l, idx) => `
+        <div class="attachment-pill">
+          <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+          <span>${Utils.escapeHtml(l.title)}</span>
+          <span style="cursor:pointer; color:var(--danger); margin-left:6px;" onclick="App.Grading.removeModelLink(${idx})">✕</span>
+        </div>
+      `).join('');
+      lucide.createIcons();
+    },
+
+    removeModelLink(idx) {
+      this.tempModelLinks.splice(idx, 1);
+      this.renderModelLinksList();
     },
 
     async openGradeModal(submissionId) {
@@ -1056,17 +1485,259 @@ window.App = (function() {
       
       const summaryBox = document.getElementById("grading-submission-summary");
       summaryBox.innerHTML = `
-        <strong>Bài làm của học sinh (Lần ${detail.submission.attempt_number}):</strong>
-        <div style="margin:8px 0; padding:10px; background:#fff; border:1px solid var(--border-color); font-size:14px;">${detail.submission.text_content || 'Không có văn bản.'}</div>
-        ${detail.files.length > 0 ? `<div>File đính kèm: <a href="${detail.files[0].file_url}" target="_blank" class="btn btn-outline btn-sm">Xem file Drive</a></div>` : ''}
+        <div style="font-size:14px; font-weight:700; color:var(--primary); margin-bottom:6px;">
+          Bài nộp Lần ${detail.submission.attempt_number} (Gửi lúc: ${Utils.formatDateTimeVN(detail.submission.submitted_at)})
+        </div>
+        <div style="margin:8px 0; padding:12px; background:#fff; border:1px solid var(--border-color); border-radius:var(--radius-sm); font-size:14px; line-height:1.6;">
+          ${detail.submission.text_content ? detail.submission.text_content.replace(/\n/g, '<br>') : '<em style="color:var(--text-muted);">Không có bài viết văn bản.</em>'}
+        </div>
+
+        ${detail.files && detail.files.length > 0 ? `
+          <div style="margin-top:8px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted);">FILE ĐÍNH KÈM CỦA HỌC SINH:</span>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">
+              ${detail.files.map(f => `
+                <a href="${f.file_url}" target="_blank" class="attachment-pill">
+                  <i data-lucide="paperclip" style="width:14px; height:14px;"></i>
+                  <span>${Utils.escapeHtml(f.file_name)}</span>
+                </a>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${detail.submission.externalLinksList && detail.submission.externalLinksList.length > 0 ? `
+          <div style="margin-top:8px;">
+            <span style="font-size:12px; font-weight:700; color:var(--text-muted);">LIÊN KẾT HỌC SINH GỬI:</span>
+            <div style="display:flex; flex-wrap:wrap; gap:8px; margin-top:4px;">
+              ${detail.submission.externalLinksList.map(l => `
+                <a href="${l.url}" target="_blank" class="attachment-pill">
+                  <i data-lucide="external-link" style="width:14px; height:14px;"></i>
+                  <span>${Utils.escapeHtml(l.title)}</span>
+                </a>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
       `;
 
+      // Nạp dữ liệu cũ nếu đã từng chấm
+      if (detail.grade) {
+        document.getElementById("grade-total-score").value = detail.grade.total_score || "";
+        document.getElementById("grade-feedback-text").value = detail.grade.feedback_text || "";
+        document.getElementById("grade-model-solution-text").value = detail.grade.model_solution_text || "";
+        this.tempModelFiles = detail.grade.modelFilesList || [];
+        this.tempModelLinks = detail.grade.modelLinksList || [];
+      } else {
+        document.getElementById("grade-total-score").value = "";
+        document.getElementById("grade-feedback-text").value = "";
+        document.getElementById("grade-model-solution-text").value = "";
+        this.tempModelFiles = [];
+        this.tempModelLinks = [];
+      }
+
+      this.renderModelFilesList();
+      this.renderModelLinksList();
+      lucide.createIcons();
       UI.openModal("grading-modal");
     }
   };
 
   // ==========================================
-  // 11. MODULE: FLASHCARDS (SM-2)
+  // 12. DICTIONARY MODULE (TÁCH RIÊNG 2 CHIỀU TRA CỨU)
+  // ==========================================
+  const Dictionary = {
+    init() {
+      // Chuyển đổi tab chiều tra cứu
+      document.querySelectorAll(".dict-tab-btn").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const mode = btn.getAttribute("data-mode");
+          STATE.dictMode = mode;
+          document.querySelectorAll(".dict-tab-btn").forEach(b => b.classList.remove("active"));
+          btn.classList.add("active");
+
+          const input = document.getElementById("dict-search-input");
+          if (mode === "ZH_VI") {
+            input.placeholder = "Gõ chữ Hán, Pinyin (VD: 你好, nihao, lao shi)...";
+          } else {
+            input.placeholder = "Gõ nghĩa Tiếng Việt (VD: xin chào, giáo viên, xinh đẹp)...";
+          }
+          this.triggerSearch();
+        });
+      });
+
+      const btn = document.getElementById("btn-dict-search");
+      const input = document.getElementById("dict-search-input");
+      if (btn) btn.addEventListener("click", () => this.triggerSearch());
+      if (input) {
+        input.addEventListener("keydown", (e) => {
+          if (e.key === "Enter" && !document.getElementById("pinyin-ime-popover").style.display.includes("block")) {
+            this.triggerSearch();
+          }
+        });
+      }
+    },
+
+    initView() {
+      // Focus vào ô tìm kiếm khi mở view
+      const input = document.getElementById("dict-search-input");
+      if (input) input.focus();
+    },
+
+    async triggerSearch() {
+      const input = document.getElementById("dict-search-input");
+      if (!input) return;
+      const query = input.value.trim();
+      const resBox = document.getElementById("dict-search-results");
+      if (!query) {
+        resBox.innerHTML = "<p style='color:var(--text-muted); padding:20px; text-align:center;'>Vui lòng nhập từ khóa để tra cứu.</p>";
+        return;
+      }
+
+      resBox.innerHTML = "<p style='color:var(--text-muted); padding:10px;'>Đang tra cứu từ điển...</p>";
+
+      try {
+        let results = await LocalDictionary.search(query, STATE.dictMode);
+
+        if (results.length === 0) {
+          results = await API.call("dictionary.search", { query, mode: STATE.dictMode });
+        }
+
+        if (results.length === 0) {
+          resBox.innerHTML = `
+            <div style="text-align:center; padding:30px; color:var(--text-muted);">
+              <i data-lucide="help-circle" style="width:32px; height:32px; margin-bottom:8px;"></i>
+              <p>Không tìm thấy mục từ phù hợp theo chiều tra cứu hiện tại.</p>
+              <p style="font-size:12px; margin-top:4px;">Hãy thử đổi tab giữa <strong>Trung ➔ Việt</strong> hoặc <strong>Việt ➔ Trung</strong>.</p>
+            </div>`;
+          lucide.createIcons();
+          return;
+        }
+
+        resBox.innerHTML = results.map(item => `
+          <div class="dict-result-row">
+            <div>
+              <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+                <span class="zh-serif" style="font-size:28px; font-weight:700; color:var(--primary);">${item.simplified}</span>
+                ${item.traditional && item.traditional !== item.simplified ? `<span style="font-size:16px; color:var(--text-muted);">[Phồn thể: ${item.traditional}]</span>` : ''}
+                <span style="font-size:16px; color:var(--warm-gold); font-weight:600;">${item.pinyin}</span>
+                ${item.sino_vietnamese ? `<span style="font-size:12px; color:var(--jade-green); font-weight:600;">[Hán Việt: ${item.sino_vietnamese}]</span>` : ''}
+                <span class="chinese-seal-tag">${item.hsk_level || 'HSK'}</span>
+              </div>
+              <div style="font-size:15px; font-weight:600; margin-top:6px; color:var(--text-main);">${item.meaning_vi}</div>
+              ${item.example_zh ? `
+                <div style="font-size:13px; color:var(--text-muted); margin-top:6px; background:var(--surface-parchment); padding:8px 12px; border-radius:4px;">
+                  Ví dụ: <strong class="zh-text" style="color:var(--text-main);">${item.example_zh}</strong> — <em>${item.example_vi || ''}</em>
+                </div>` : ''
+              }
+            </div>
+            <button class="btn btn-outline btn-sm" onclick="App.Vocabulary.addFromDict('${item.simplified}', '${item.pinyin}', '${item.meaning_vi.replace(/'/g, "\\'")}')">
+              <i data-lucide="bookmark-plus"></i> Lưu sổ từ
+            </button>
+          </div>
+        `).join('');
+        lucide.createIcons();
+      } catch (e) {
+        resBox.innerHTML = "<p style='color:var(--danger);'>Lỗi tra cứu từ điển.</p>";
+      }
+    }
+  };
+
+  // ==========================================
+  // 13. VOCABULARY NOTEBOOK
+  // ==========================================
+  const Vocabulary = {
+    init() {
+      const btnOpenVoc = document.getElementById("btn-add-vocab-modal");
+      if (btnOpenVoc) {
+        btnOpenVoc.addEventListener("click", () => {
+          UI.openModal("vocab-modal");
+        });
+      }
+
+      const vocForm = document.getElementById("vocab-create-form");
+      if (vocForm) {
+        vocForm.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          const btn = document.getElementById("btn-submit-vocab-create");
+          try {
+            btn.disabled = true;
+            btn.innerText = "Đang lưu...";
+            await API.call("vocabulary.create", {
+              simplified: document.getElementById("voc-simplified").value.trim(),
+              pinyin: document.getElementById("voc-pinyin").value.trim(),
+              vietnameseMeaning: document.getElementById("voc-meaning").value.trim(),
+              wordType: document.getElementById("voc-type").value.trim(),
+              hskLevel: document.getElementById("voc-level").value,
+              exampleZh: document.getElementById("voc-example-zh").value.trim(),
+              exampleVi: document.getElementById("voc-example-vi").value.trim(),
+              source: "MANUAL"
+            });
+            UI.toast("Đã thêm từ vựng mới vào sổ tay!", "success");
+            UI.closeModal("vocab-modal");
+            vocForm.reset();
+            this.load();
+          } catch (err) {
+          } finally {
+            btn.disabled = false;
+            btn.innerText = "Lưu vào sổ từ";
+          }
+        });
+      }
+    },
+
+    async load() {
+      const tbody = document.getElementById("vocab-table-tbody");
+      tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; padding:20px;'>Đang nạp sổ từ vựng...</td></tr>";
+      try {
+        const list = await API.call("vocabulary.list");
+        if (list.length === 0) {
+          tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:var(--text-muted); padding:30px;'>Sổ từ vựng đang trống. Hãy tra từ điển và lưu từ mới nhé!</td></tr>";
+          return;
+        }
+
+        tbody.innerHTML = list.map(item => {
+          const w = item.wordData || {};
+          return `
+            <tr>
+              <td><strong class="zh-serif" style="font-size:22px; color:var(--primary);">${w.simplified || 'N/A'}</strong></td>
+              <td style="color:var(--warm-gold); font-weight:600;">${w.pinyin || ''}</td>
+              <td><strong>${w.vietnamese_meaning || ''}</strong></td>
+              <td><span class="chinese-seal-tag">${w.hsk_level || 'HSK 1'}</span></td>
+              <td style="font-size:12.5px; color:var(--text-muted);">${w.example_zh || ''}</td>
+              <td>
+                <button class="btn btn-outline btn-sm" onclick="App.Vocabulary.toggleFavorite('${item.entryId}', ${!item.isFavorite})">
+                  ${item.isFavorite ? '★ Đã lưu' : '☆ Yêu thích'}
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      } catch (e) {
+        tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:var(--danger);'>Lỗi nạp từ vựng.</td></tr>";
+      }
+    },
+
+    async addFromDict(hanzi, pinyin, meaning) {
+      try {
+        await API.call("vocabulary.create", {
+          simplified: hanzi,
+          pinyin: pinyin,
+          vietnameseMeaning: meaning,
+          source: "DICTIONARY"
+        });
+        UI.toast(`Đã lưu "${hanzi}" vào sổ từ vựng!`, "success");
+      } catch (e) {}
+    },
+
+    async toggleFavorite(entryId, isFav) {
+      await API.call("vocabulary.toggleFavorite", { entryId, isFavorite: isFav });
+      this.load();
+    }
+  };
+
+  // ==========================================
+  // 14. FLASHCARDS (SM-2)
   // ==========================================
   const Flashcard = {
     isFlipped: false,
@@ -1076,7 +1747,7 @@ window.App = (function() {
       try {
         const decks = await API.call("flashcard.getDecks");
         if (decks.length === 0) {
-          document.getElementById("fc-hanzi").innerText = "Chưa có thẻ";
+          document.getElementById("fc-hanzi").innerText = "Chưa có bộ thẻ";
           return;
         }
 
@@ -1119,7 +1790,7 @@ window.App = (function() {
 
       if (STATE.cachedFlashcards.length === 0 || STATE.currentCardIndex >= STATE.cachedFlashcards.length) {
         document.getElementById("fc-hanzi").innerText = "太棒了!";
-        frontPane.querySelector("p").innerText = "Đã hoàn thành toàn bộ thẻ ôn tập hôm nay!";
+        frontPane.querySelector("p").innerText = "Bạn đã hoàn thành tất cả các thẻ ôn tập hôm nay!";
         return;
       }
 
@@ -1168,165 +1839,16 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 12. MODULE: DICTIONARY & VOCABULARY
-  // ==========================================
-  const Dictionary = {
-    init() {
-      const btn = document.getElementById("btn-dict-search");
-      const input = document.getElementById("dict-search-input");
-      if (!btn || !input) return;
-
-      const triggerSearch = async () => {
-        const query = input.value.trim();
-        if (!query) return;
-        const resBox = document.getElementById("dict-search-results");
-        resBox.innerHTML = "<p style='color:var(--text-muted);'>Đang tra cứu từ điển...</p>";
-
-        try {
-          // Tra cứu siêu tốc bằng Local IndexedDB trước
-          let results = await LocalDictionary.search(query);
-
-          // Nếu IndexedDB chưa sẵn sàng hoặc không có, fallback sang API backend
-          if (results.length === 0) {
-            results = await API.call("dictionary.search", { query });
-          }
-
-          if (results.length === 0) {
-            resBox.innerHTML = "<p style='color:var(--text-muted);'>Không tìm thấy mục từ phù hợp.</p>";
-            return;
-          }
-
-          resBox.innerHTML = results.map(item => `
-            <div class="dict-result-row">
-              <div>
-                <span class="zh-serif" style="font-size:26px; font-weight:700; color:var(--primary);">${item.simplified}</span>
-                <span style="font-size:15px; color:var(--warm-gold); font-weight:600; margin-left:12px;">${item.pinyin}</span>
-                ${item.sino_vietnamese ? `<span style="font-size:12px; color:var(--jade-green); margin-left:8px;">[Âm Hán Việt: ${item.sino_vietnamese}]</span>` : ''}
-                <span class="chinese-seal-tag" style="margin-left:8px;">${item.hsk_level}</span>
-                <div style="font-size:14px; font-weight:600; margin-top:4px; color:var(--text-main);">${item.meaning_vi}</div>
-                ${item.example_zh ? `<div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Ví dụ: <strong>${item.example_zh}</strong> — <em>${item.example_vi || ''}</em></div>` : ''}
-              </div>
-              <button class="btn btn-outline btn-sm" onclick="App.Vocabulary.addFromDict('${item.simplified}', '${item.pinyin}', '${item.meaning_vi.replace(/'/g, "\\'")}')">
-                <i data-lucide="bookmark-plus"></i> Lưu vào Sổ từ
-              </button>
-            </div>
-          `).join('');
-          lucide.createIcons();
-        } catch (e) {
-          resBox.innerHTML = "<p style='color:var(--danger);'>Lỗi tra từ điển.</p>";
-        }
-      };
-
-      btn.addEventListener("click", triggerSearch);
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "Enter" && !document.getElementById("pinyin-ime-popover").style.display.includes("block")) {
-          triggerSearch();
-        }
-      });
-    }
-  };
-
-  const Vocabulary = {
-    init() {
-      const btnOpenVoc = document.getElementById("btn-add-vocab-modal");
-      if (btnOpenVoc) {
-        btnOpenVoc.addEventListener("click", () => {
-          UI.openModal("vocab-modal");
-        });
-      }
-
-      const vocForm = document.getElementById("vocab-create-form");
-      if (vocForm) {
-        vocForm.addEventListener("submit", async (e) => {
-          e.preventDefault();
-          const btn = document.getElementById("btn-submit-vocab-create");
-          try {
-            btn.disabled = true;
-            btn.innerText = "Đang lưu...";
-            await API.call("vocabulary.create", {
-              simplified: document.getElementById("voc-simplified").value.trim(),
-              pinyin: document.getElementById("voc-pinyin").value.trim(),
-              vietnameseMeaning: document.getElementById("voc-meaning").value.trim(),
-              wordType: document.getElementById("voc-type").value.trim(),
-              hskLevel: document.getElementById("voc-level").value,
-              exampleZh: document.getElementById("voc-example-zh").value.trim(),
-              exampleVi: document.getElementById("voc-example-vi").value.trim(),
-              source: "MANUAL"
-            });
-            UI.toast("Đã thêm từ vựng mới vào sổ tay!", "success");
-            UI.closeModal("vocab-modal");
-            vocForm.reset();
-            this.load();
-          } catch (err) {
-          } finally {
-            btn.disabled = false;
-            btn.innerText = "Lưu vào sổ từ";
-          }
-        });
-      }
-    },
-
-    async load() {
-      const tbody = document.getElementById("vocab-table-tbody");
-      tbody.innerHTML = "<tr><td colspan='6' style='text-align:center;'>Đang nạp sổ từ vựng...</td></tr>";
-      try {
-        const list = await API.call("vocabulary.list");
-        if (list.length === 0) {
-          tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:var(--text-muted);'>Sổ từ vựng đang trống.</td></tr>";
-          return;
-        }
-
-        tbody.innerHTML = list.map(item => {
-          const w = item.wordData || {};
-          return `
-            <tr>
-              <td><strong class="zh-serif" style="font-size:20px; color:var(--primary);">${w.simplified || 'N/A'}</strong></td>
-              <td style="color:var(--warm-gold); font-weight:600;">${w.pinyin || ''}</td>
-              <td><strong>${w.vietnamese_meaning || ''}</strong></td>
-              <td><span class="chinese-seal-tag">${w.hsk_level || 'HSK 1'}</span></td>
-              <td style="font-size:12px; color:var(--text-muted);">${w.example_zh || ''}</td>
-              <td>
-                <button class="btn btn-outline btn-sm" onclick="App.Vocabulary.toggleFavorite('${item.entryId}', ${!item.isFavorite})">
-                  ${item.isFavorite ? '★ Đã thích' : '☆ Thích'}
-                </button>
-              </td>
-            </tr>
-          `;
-        }).join('');
-      } catch (e) {
-        tbody.innerHTML = "<tr><td colspan='6' style='text-align:center; color:var(--danger);'>Lỗi nạp từ vựng.</td></tr>";
-      }
-    },
-
-    async addFromDict(hanzi, pinyin, meaning) {
-      try {
-        await API.call("vocabulary.create", {
-          simplified: hanzi,
-          pinyin: pinyin,
-          vietnameseMeaning: meaning,
-          source: "DICTIONARY"
-        });
-        UI.toast(`Đã lưu "${hanzi}" vào sổ từ vựng!`, "success");
-      } catch (e) {}
-    },
-
-    async toggleFavorite(entryId, isFav) {
-      await API.call("vocabulary.toggleFavorite", { entryId, isFavorite: isFav });
-      this.load();
-    }
-  };
-
-  // ==========================================
-  // 13. MODULE: ERROR NOTEBOOK & JOURNAL
+  // 15. ERROR NOTEBOOK & JOURNAL
   // ==========================================
   const ErrorNotebook = {
     async load() {
       const tbody = document.getElementById("error-notebook-tbody");
-      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center;'>Đang tải dữ liệu...</td></tr>";
+      tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; padding:20px;'>Đang tải dữ liệu...</td></tr>";
       try {
         const errors = await API.call("errorNotebook.list");
         if (errors.length === 0) {
-          tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:var(--text-muted);'>Chưa có lỗi sai nào. Học rất tốt!</td></tr>";
+          tbody.innerHTML = "<tr><td colspan='5' style='text-align:center; color:var(--text-muted); padding:30px;'>Chưa có lỗi sai nào. Học rất tốt!</td></tr>";
           return;
         }
 
@@ -1334,11 +1856,11 @@ window.App = (function() {
           <tr>
             <td style="color:var(--danger); font-weight:600;">${err.wrong_text}</td>
             <td style="color:var(--success); font-weight:600;">${err.correct_text}</td>
-            <td style="font-size:12px;">${err.explanation}</td>
+            <td style="font-size:13px;">${err.explanation}</td>
             <td><span class="chinese-seal-tag">${err.category}</span></td>
             <td>
               <button class="btn btn-outline btn-sm" onclick="App.ErrorNotebook.toggle('${err.error_id}', ${err.is_resolved !== 'TRUE'})">
-                ${err.is_resolved === 'TRUE' ? '✓ Đã sửa' : '○ Cần ôn lại'}
+                ${err.is_resolved === 'TRUE' ? '✓ Đã khắc phục' : '○ Cần ôn lại'}
               </button>
             </td>
           </tr>
@@ -1387,16 +1909,16 @@ window.App = (function() {
         }
 
         box.innerHTML = `
-          <h4 style="font-size:15px; font-weight:700; margin:24px 0 12px; color:var(--primary);">Lịch sử phản tư học tập</h4>
+          <h4 style="font-size:16px; font-weight:700; margin:24px 0 14px; color:var(--primary); font-family:var(--font-editorial);">Lịch sử nhật ký phản tư</h4>
           ${entries.map(j => `
-            <div class="editorial-card" style="margin-bottom:12px; padding:18px;">
-              <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:6px;">
-                <span>Ngày ghi: <strong>${j.entry_date}</strong></span>
-                <span>Mức độ hiểu bài: ${'⭐'.repeat(Number(j.comprehension_rating))}</span>
+            <div class="editorial-card" style="margin-bottom:14px; padding:20px;">
+              <div style="display:flex; justify-content:space-between; font-size:12.5px; color:var(--text-muted); margin-bottom:8px;">
+                <span>Ngày ghi: <strong>${Utils.formatDateVN(j.entry_date)}</strong></span>
+                <span>Mức độ tự tin: ${'⭐'.repeat(Number(j.comprehension_rating))}</span>
               </div>
-              <div style="font-size:13px; font-weight:600; color:var(--text-main);">${j.learned_today}</div>
-              ${j.difficulties ? `<div style="font-size:12px; color:var(--warning); margin-top:4px;">Điểm còn vướng mắc: ${j.difficulties}</div>` : ''}
-              ${j.teacher_reply ? `<div style="margin-top:10px; padding:10px; background:var(--jade-light); border-left:3px solid var(--jade-green); border-radius:4px; font-size:12px; color:var(--jade-dark);"><strong>Lão Sư phản hồi:</strong> ${j.teacher_reply}</div>` : ''}
+              <div style="font-size:14px; font-weight:600; color:var(--text-main);">${j.learned_today}</div>
+              ${j.difficulties ? `<div style="font-size:13px; color:var(--warning); margin-top:6px;">Khúc mắc: ${j.difficulties}</div>` : ''}
+              ${j.teacher_reply ? `<div style="margin-top:10px; padding:12px; background:var(--jade-light); border-left:3px solid var(--jade-green); border-radius:4px; font-size:13px; color:var(--jade-dark);"><strong>Lão Sư phản hồi:</strong> ${j.teacher_reply}</div>` : ''}
             </div>
           `).join('')}
         `;
@@ -1405,7 +1927,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 14. MODULE: REPORTS & CHARTS
+  // 16. REPORTS MODULE
   // ==========================================
   const Reports = {
     radarChart: null,
@@ -1418,12 +1940,12 @@ window.App = (function() {
 
         const issuesBox = document.getElementById("report-attention-list");
         if (issues.length === 0) {
-          issuesBox.innerHTML = "<p style='color:var(--jade-green); font-size:13px;'>Học sinh nắm chắc toàn bộ kiến thức, không phát hiện lỗ hổng lớn.</p>";
+          issuesBox.innerHTML = "<p style='color:var(--jade-green); font-size:13.5px;'>Học sinh tiếp thu bài rất tốt, chưa phát hiện lỗ hổng ngữ pháp nghiêm trọng.</p>";
         } else {
           issuesBox.innerHTML = issues.map(iss => `
-            <div style="padding:10px 14px; background:var(--primary-light); border-left:4px solid var(--primary); border-radius:4px; margin-bottom:8px; font-size:13px;">
+            <div style="padding:12px 16px; background:var(--primary-light); border-left:4px solid var(--primary); border-radius:4px; margin-bottom:10px; font-size:13.5px;">
               <strong>[${iss.type}]</strong> Cần sửa: <span style="text-decoration:line-through; color:var(--danger);">${iss.wrongContent}</span> → <strong style="color:var(--success);">${iss.correctContent}</strong>
-              <div style="font-size:12px; color:var(--text-muted); margin-top:2px;">Ghi chú của Giáo viên: ${iss.explanation}</div>
+              <div style="font-size:12px; color:var(--text-muted); margin-top:4px;">Ghi chú Lão Sư: ${iss.explanation}</div>
             </div>
           `).join('');
         }
@@ -1435,7 +1957,7 @@ window.App = (function() {
           data: {
             labels: ["Ngữ pháp", "Từ vựng", "Phát âm", "Đọc hiểu", "Viết Hán tự"],
             datasets: [{
-              label: "Mức độ thuần thục (%)",
+              label: "Mức độ thành thạo (%)",
               data: [82, 89, 76, 85, 78],
               backgroundColor: "rgba(184, 53, 40, 0.2)",
               borderColor: "#B83528",
@@ -1471,7 +1993,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 15. UI HELPERS & NOTIFICATIONS
+  // 17. UI HELPERS & NOTIFICATIONS
   // ==========================================
   const UI = {
     toast(message, type = "info") {
@@ -1498,7 +2020,7 @@ window.App = (function() {
   };
 
   // ==========================================
-  // 16. BOOTSTRAP INITIALIZATION
+  // 18. INITIALIZATION BOOTSTRAP
   // ==========================================
   async function init() {
     Auth.init();
@@ -1512,24 +2034,26 @@ window.App = (function() {
     Vocabulary.init();
     Journal.init();
 
-    // Khởi tạo IndexedDB chạy nền để sẵn sàng tra từ
+    // Khởi tạo cơ sở dữ liệu IndexedDB
     LocalDictionary.init();
   }
 
   return {
     init,
     UI,
+    Utils,
     Router,
     Courses,
     Assignments,
     Grading,
     Flashcard,
+    Dictionary,
     Vocabulary,
     ErrorNotebook
   };
 })();
 
-// Kích hoạt khi DOM tải xong
+// Kích hoạt khi trang đã tải xong DOM
 document.addEventListener("DOMContentLoaded", () => {
   App.init();
 });
