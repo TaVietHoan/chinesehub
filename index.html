@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chinese Learning Hub - Nền tảng học Tiếng Trung 1:1</title>
+  <title>Chinese Learning Hub - Nền tảng Dạy & Học Tiếng Trung 1:1</title>
   
-  <!-- Fonts: Be Vietnam Pro + Noto Sans SC + Noto Serif SC -->
+  <!-- Fonts: Be Vietnam Pro + Ma Shan Zheng (Thư pháp) + Noto Serif SC (Cổ phong) + Noto Sans SC -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@600;700;900&display=swap" rel="stylesheet">
   
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -17,28 +17,41 @@
 
   <style>
     /* ==========================================================================
-       DESIGN SYSTEM: Modern Chinese Editorial + Contemporary SaaS
-       Primary: #C84B38 (Cinnabar Red) | Secondary: #66877A (Jade Green)
+       DESIGN SYSTEM: CHINESE IMPERIAL & INK WASH AESTHETICS (东方典雅美学)
+       - Primary: Cinnabar Red (Chu Sa) #B83528
+       - Secondary: Imperial Jade (Ngọc Bích) #2C6E59
+       - Accent: Warm Imperial Gold (Vàng Cung Đình) #C89B38
+       - Background: Ancient Rice Parchment (Giấy Tuyên Chỉ) #F8F5EE
+       - Ink Black (Mực Nho) #1D1D20
        ========================================================================== */
     :root {
-      --primary: #C84B38;
-      --primary-dark: #A93629;
-      --primary-light: #FBF0EE;
-      --bg-page: #F7F6F2;
+      --primary: #B83528;
+      --primary-dark: #96261B;
+      --primary-light: #FBF0ED;
+      --bg-page: #F8F5EE;
+      --bg-subtle: #F2EEE4;
       --surface: #FFFFFF;
-      --text-main: #252824;
-      --text-muted: #777970;
-      --jade-green: #66877A;
-      --jade-light: #EBF1EF;
-      --warm-gold: #C5A56A;
-      --border-color: #E9E7E0;
-      --danger: #C84B38;
-      --success: #4F8A69;
-      --warning: #D49A45;
+      --surface-parchment: #FAF7F0;
+      --text-main: #1D1D20;
+      --text-muted: #6B685F;
+      --jade-green: #2C6E59;
+      --jade-dark: #1E4F40;
+      --jade-light: #EDF5F2;
+      --warm-gold: #C89B38;
+      --gold-light: #FBF6EC;
+      --border-color: #E6E1D3;
+      --border-gold: #DFC794;
+      --danger: #B83528;
+      --success: #2C6E59;
+      --warning: #C89B38;
+      
       --font-body: 'Be Vietnam Pro', sans-serif;
       --font-chinese: 'Noto Sans SC', sans-serif;
       --font-editorial: 'Noto Serif SC', serif;
-      --shadow-subtle: 0 4px 16px rgba(37, 40, 36, 0.05);
+      --font-calligraphy: 'Ma Shan Zheng', cursive;
+      
+      --shadow-subtle: 0 4px 18px rgba(29, 29, 32, 0.05);
+      --shadow-seal: 0 4px 12px rgba(184, 53, 40, 0.25);
       --radius-sm: 6px;
       --radius-md: 10px;
       --radius-lg: 16px;
@@ -53,6 +66,9 @@
     body {
       font-family: var(--font-body);
       background-color: var(--bg-page);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(200, 155, 56, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(184, 53, 40, 0.03) 0%, transparent 40%);
       color: var(--text-main);
       line-height: 1.6;
       -webkit-font-smoothing: antialiased;
@@ -60,6 +76,7 @@
 
     .zh-text { font-family: var(--font-chinese); }
     .zh-serif { font-family: var(--font-editorial); }
+    .zh-calligraphy { font-family: var(--font-calligraphy); }
 
     /* LAYOUT WRAPPER */
     #app-container {
@@ -67,7 +84,7 @@
       min-height: 100vh;
     }
 
-    /* SIDEBAR */
+    /* SIDEBAR WITH CHINESE PATTERN ACCENT */
     .sidebar {
       width: 260px;
       background: var(--surface);
@@ -79,30 +96,34 @@
       bottom: 0;
       left: 0;
       z-index: 50;
+      box-shadow: 2px 0 12px rgba(0,0,0,0.02);
     }
 
     .brand-header {
       padding: 24px 20px;
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
       border-bottom: 1px solid var(--border-color);
+      background: linear-gradient(180deg, #FFFFFF 0%, var(--surface-parchment) 100%);
     }
 
+    /* CHINESE SEAL STAMP (DẤU ẤN TRIỆN ĐỎ) */
     .brand-logo-seal {
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: var(--primary);
       color: #fff;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: var(--font-editorial);
-      font-weight: 700;
-      font-size: 20px;
+      font-family: var(--font-calligraphy);
+      font-size: 26px;
       border-radius: var(--radius-sm);
-      box-shadow: 0 2px 8px rgba(200, 75, 56, 0.3);
+      border: 2px solid #E57368;
+      box-shadow: var(--shadow-seal);
       flex-shrink: 0;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.3);
     }
 
     .brand-title-wrap h1 {
@@ -114,14 +135,15 @@
 
     .brand-title-wrap p {
       font-size: 11px;
-      color: var(--text-muted);
+      color: var(--warm-gold);
+      font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.8px;
+      letter-spacing: 1px;
     }
 
     .sidebar-menu {
       flex: 1;
-      padding: 20px 12px;
+      padding: 18px 12px;
       overflow-y: auto;
       list-style: none;
     }
@@ -131,8 +153,8 @@
       font-weight: 700;
       color: var(--text-muted);
       text-transform: uppercase;
-      padding: 10px 12px 6px;
-      letter-spacing: 0.6px;
+      padding: 12px 14px 6px;
+      letter-spacing: 0.8px;
     }
 
     .nav-item {
@@ -143,51 +165,58 @@
       border-radius: var(--radius-sm);
       color: var(--text-main);
       text-decoration: none;
-      font-size: 14px;
+      font-size: 13.5px;
       font-weight: 500;
       cursor: pointer;
       transition: all 0.15s ease;
-      margin-bottom: 3px;
+      margin-bottom: 4px;
+      border-left: 3px solid transparent;
     }
 
     .nav-item i { width: 18px; height: 18px; color: var(--text-muted); }
-    .nav-item:hover { background: #F3F1EC; }
+    .nav-item:hover {
+      background: var(--surface-parchment);
+      color: var(--primary);
+    }
     .nav-item.active {
       background: var(--primary-light);
       color: var(--primary);
       font-weight: 600;
+      border-left-color: var(--primary);
     }
     .nav-item.active i { color: var(--primary); }
 
     .user-profile-badge {
-      padding: 16px;
+      padding: 16px 18px;
       border-top: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       gap: 12px;
+      background: var(--surface-parchment);
     }
 
     .user-avatar {
-      width: 38px;
-      height: 38px;
+      width: 40px;
+      height: 40px;
       border-radius: 50%;
       object-fit: cover;
-      border: 1px solid var(--border-color);
+      border: 2px solid var(--border-gold);
       flex-shrink: 0;
       background-color: var(--bg-page);
     }
 
     .user-info { flex: 1; overflow: hidden; }
-    .user-name { font-size: 13px; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
-    .user-role-tag {
+    .user-name { font-size: 13px; font-weight: 700; white-space: nowrap; text-overflow: ellipsis; overflow: hidden; }
+    
+    .chinese-seal-tag {
       display: inline-block;
       font-size: 10px;
       background: var(--jade-light);
       color: var(--jade-green);
-      padding: 2px 6px;
+      padding: 2px 7px;
       border-radius: 4px;
-      font-weight: 600;
-      text-transform: uppercase;
+      font-weight: 700;
+      border: 1px solid rgba(44, 110, 89, 0.2);
     }
 
     /* MAIN CONTENT VIEWPORT */
@@ -199,15 +228,16 @@
       flex-direction: column;
     }
 
-    /* TOP BAR */
+    /* TOP BAR WITH JADE ACCENT */
     .top-header {
       height: 64px;
-      background: var(--surface);
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(8px);
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 32px;
+      padding: 0 36px;
       position: sticky;
       top: 0;
       z-index: 40;
@@ -217,26 +247,28 @@
       font-size: 18px;
       font-weight: 700;
       color: var(--text-main);
+      font-family: var(--font-editorial);
+      letter-spacing: -0.2px;
     }
 
     .header-actions {
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 18px;
     }
 
-    /* CHINESE PINYIN IME TOGGLE BAR */
+    /* IN-PAGE IME SWITCHER */
     .ime-switcher-widget {
       display: inline-flex;
       align-items: center;
-      background: #F3F1EC;
+      background: var(--bg-subtle);
       padding: 3px;
       border-radius: var(--radius-sm);
       border: 1px solid var(--border-color);
     }
 
     .ime-toggle-btn {
-      padding: 4px 10px;
+      padding: 5px 12px;
       font-size: 12px;
       font-weight: 600;
       border-radius: 4px;
@@ -250,26 +282,55 @@
     .ime-toggle-btn.active {
       background: var(--surface);
       color: var(--primary);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      font-weight: 700;
     }
 
-    /* VIEW CONTENT PADDING */
+    /* GLOBAL FLOATING PINYIN IME BAR (KHÔNG BỊ CHE KHUẤT BỞI MODAL) */
+    #floating-ime-bar {
+      position: fixed;
+      bottom: 24px;
+      left: 280px;
+      z-index: 10001; /* Cao hơn cả Modal Overlay 1000 */
+      background: rgba(29, 29, 32, 0.92);
+      backdrop-filter: blur(6px);
+      color: #fff;
+      padding: 6px 14px;
+      border-radius: 30px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      font-size: 12px;
+    }
+
+    #floating-ime-bar .hotkey-badge {
+      background: rgba(255, 255, 255, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      color: var(--border-gold);
+    }
+
+    /* VIEW CONTENT */
     .page-content-body {
-      padding: 32px;
+      padding: 32px 36px;
       flex: 1;
-      max-width: 1360px;
+      max-width: 1400px;
       width: 100%;
       margin: 0 auto;
     }
 
-    /* UI CARDS & PANELS */
+    /* EDITORIAL CARDS & CHINESE FRAME */
     .editorial-card {
       background: var(--surface);
       border: 1px solid var(--border-color);
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-subtle);
-      padding: 24px;
+      padding: 26px;
       margin-bottom: 24px;
+      position: relative;
     }
 
     .card-header-clean {
@@ -286,6 +347,7 @@
       display: flex;
       align-items: center;
       gap: 8px;
+      font-family: var(--font-editorial);
     }
 
     /* BUTTONS */
@@ -294,7 +356,7 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      padding: 8px 16px;
+      padding: 8px 18px;
       font-size: 13px;
       font-weight: 600;
       border-radius: var(--radius-sm);
@@ -304,15 +366,19 @@
       text-decoration: none;
     }
 
-    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary { 
+      background: var(--primary); 
+      color: #fff; 
+      box-shadow: 0 2px 8px rgba(184, 53, 40, 0.2);
+    }
     .btn-primary:hover { background: var(--primary-dark); }
     .btn-outline { background: #fff; border-color: var(--border-color); color: var(--text-main); }
-    .btn-outline:hover { background: #F8F7F4; border-color: #DCD9D0; }
+    .btn-outline:hover { background: var(--surface-parchment); border-color: var(--border-gold); }
     .btn-jade { background: var(--jade-green); color: #fff; }
-    .btn-jade:hover { background: #557267; }
-    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-jade:hover { background: var(--jade-dark); }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
 
-    /* METRIC STAT WIDGETS */
+    /* STAT METRICS */
     .stat-grid-4 {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -323,9 +389,10 @@
     .stat-metric-box {
       background: var(--surface);
       border: 1px solid var(--border-color);
-      padding: 20px;
+      padding: 22px;
       border-radius: var(--radius-md);
       box-shadow: var(--shadow-subtle);
+      border-top: 3px solid var(--primary);
     }
 
     .stat-metric-label {
@@ -333,14 +400,15 @@
       color: var(--text-muted);
       font-weight: 600;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: 0.6px;
     }
 
     .stat-metric-val {
-      font-size: 28px;
+      font-size: 30px;
       font-weight: 700;
       color: var(--text-main);
       margin-top: 6px;
+      font-family: var(--font-editorial);
     }
 
     /* DATA TABLES */
@@ -355,27 +423,27 @@
       width: 100%;
       border-collapse: collapse;
       text-align: left;
-      font-size: 13px;
+      font-size: 13.5px;
     }
 
     .hub-table th {
-      background: #FAF9F6;
-      padding: 12px 16px;
-      font-weight: 600;
+      background: var(--surface-parchment);
+      padding: 12px 18px;
+      font-weight: 700;
       color: var(--text-muted);
       border-bottom: 1px solid var(--border-color);
     }
 
     .hub-table td {
-      padding: 14px 16px;
+      padding: 14px 18px;
       border-bottom: 1px solid var(--border-color);
       color: var(--text-main);
     }
 
     .hub-table tr:last-child td { border-bottom: none; }
-    .hub-table tr:hover td { background: #FDFCFB; }
+    .hub-table tr:hover td { background: var(--surface-parchment); }
 
-    /* FORM ELEMENTS */
+    /* FORM CONTROLS */
     .form-group {
       margin-bottom: 16px;
     }
@@ -383,58 +451,60 @@
     .form-group label {
       display: block;
       font-size: 12px;
-      font-weight: 600;
+      font-weight: 700;
       margin-bottom: 6px;
       color: var(--text-main);
     }
 
     .form-input, .form-select, .form-textarea {
       width: 100%;
-      padding: 9px 12px;
+      padding: 10px 14px;
       border: 1px solid var(--border-color);
       border-radius: var(--radius-sm);
-      font-size: 13px;
+      font-size: 13.5px;
       font-family: inherit;
       color: var(--text-main);
       background: #fff;
-      transition: border-color 0.15s ease;
+      transition: all 0.15s ease;
     }
 
     .form-input:focus, .form-select:focus, .form-textarea:focus {
       outline: none;
       border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(184, 53, 40, 0.1);
     }
 
-    /* PINYIN POPUP IME CANDIDATES */
+    /* PINYIN POPUP IME CANDIDATES (Z-INDEX 10002) */
     #pinyin-ime-popover {
       position: absolute;
       background: var(--surface);
-      border: 1px solid var(--border-color);
-      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      border: 1px solid var(--border-gold);
+      box-shadow: 0 8px 26px rgba(0,0,0,0.18);
       border-radius: var(--radius-sm);
-      padding: 6px 10px;
+      padding: 8px 12px;
       display: none;
-      z-index: 9999;
+      z-index: 10002; /* Luôn nổi trên Modal */
       font-family: var(--font-chinese);
-      font-size: 14px;
+      font-size: 15px;
     }
 
     .ime-syllable-display {
       font-size: 11px;
       color: var(--primary);
       font-family: var(--font-body);
-      font-weight: 600;
-      margin-bottom: 4px;
-      border-bottom: 1px solid var(--border-color);
-      padding-bottom: 2px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      border-bottom: 1px dashed var(--border-color);
+      padding-bottom: 4px;
     }
 
     .ime-candidate-item {
       display: inline-block;
-      padding: 4px 8px;
+      padding: 5px 9px;
       margin: 2px;
       cursor: pointer;
       border-radius: 4px;
+      font-weight: 500;
     }
 
     .ime-candidate-item:hover, .ime-candidate-item.selected {
@@ -445,16 +515,16 @@
 
     /* FLASHCARD SM-2 UI */
     .flashcard-stage {
-      max-width: 600px;
+      max-width: 620px;
       margin: 30px auto;
       perspective: 1000px;
     }
 
     .flashcard-card-inner {
       width: 100%;
-      height: 340px;
+      height: 360px;
       background: var(--surface);
-      border: 2px solid var(--border-color);
+      border: 2px solid var(--border-gold);
       border-radius: var(--radius-lg);
       box-shadow: 0 10px 30px rgba(0,0,0,0.06);
       cursor: pointer;
@@ -469,28 +539,28 @@
     }
 
     .card-hanzi-display {
-      font-size: 58px;
-      font-family: var(--font-chinese);
+      font-size: 64px;
+      font-family: var(--font-editorial);
       font-weight: 700;
-      color: var(--text-main);
-      margin-bottom: 12px;
+      color: var(--primary);
+      margin-bottom: 14px;
     }
 
     .card-pinyin-display {
-      font-size: 20px;
-      color: var(--primary);
-      font-weight: 500;
+      font-size: 22px;
+      color: var(--warm-gold);
+      font-weight: 600;
       margin-bottom: 8px;
     }
 
     .card-meaning-display {
-      font-size: 18px;
+      font-size: 19px;
       color: var(--text-main);
-      font-weight: 600;
+      font-weight: 700;
     }
 
     .card-example-display {
-      margin-top: 16px;
+      margin-top: 18px;
       font-size: 14px;
       color: var(--text-muted);
       border-top: 1px dashed var(--border-color);
@@ -498,12 +568,23 @@
       width: 100%;
     }
 
-    /* MODAL SYSTEM */
+    /* DICTIONARY RESULTS */
+    .dict-result-row {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .dict-result-row:last-child { border-bottom: none; }
+    .dict-result-row:hover { background: var(--surface-parchment); }
+
+    /* MODAL SYSTEM (Z-INDEX 1000) */
     .hub-modal-overlay {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(37, 40, 36, 0.5);
-      backdrop-filter: blur(2px);
+      background: rgba(29, 29, 32, 0.6);
+      backdrop-filter: blur(3px);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -521,12 +602,13 @@
     .hub-modal-box {
       background: var(--surface);
       width: 90%;
-      max-width: 650px;
+      max-width: 680px;
       max-height: 90vh;
       overflow-y: auto;
       border-radius: var(--radius-md);
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      padding: 28px;
+      box-shadow: 0 24px 50px rgba(0,0,0,0.25);
+      padding: 30px;
+      border: 1px solid var(--border-gold);
     }
 
     /* TOAST NOTIFICATIONS */
@@ -534,7 +616,7 @@
       position: fixed;
       bottom: 24px;
       right: 24px;
-      z-index: 9999;
+      z-index: 10003;
       display: flex;
       flex-direction: column;
       gap: 10px;
@@ -543,17 +625,17 @@
     .toast-pill {
       background: var(--text-main);
       color: #fff;
-      padding: 12px 18px;
+      padding: 12px 20px;
       border-radius: var(--radius-sm);
-      font-size: 13px;
+      font-size: 13.5px;
       font-weight: 500;
-      box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2);
       display: flex;
       align-items: center;
       gap: 10px;
       animation: slideIn 0.25s ease;
     }
-    .toast-pill.success { background: var(--success); }
+    .toast-pill.success { background: var(--jade-green); }
     .toast-pill.error { background: var(--danger); }
 
     @keyframes slideIn {
@@ -561,11 +643,14 @@
       to { transform: translateX(0); opacity: 1; }
     }
 
-    /* LOGIN SCREEN WRAPPER */
+    /* LOGIN SCREEN */
     #login-view {
       position: fixed;
       top: 0; left: 0; right: 0; bottom: 0;
       background: var(--bg-page);
+      background-image: 
+        radial-gradient(circle at 10% 20%, rgba(184, 53, 40, 0.05) 0%, transparent 40%),
+        radial-gradient(circle at 90% 80%, rgba(200, 155, 56, 0.05) 0%, transparent 40%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -574,44 +659,52 @@
 
     .login-card {
       background: var(--surface);
-      border: 1px solid var(--border-color);
+      border: 1px solid var(--border-gold);
       border-radius: var(--radius-lg);
-      padding: 40px;
+      padding: 44px;
       width: 100%;
-      max-width: 420px;
-      box-shadow: var(--shadow-subtle);
+      max-width: 440px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.06);
     }
   </style>
 </head>
 <body>
 
+  <!-- GLOBAL FLOATING PINYIN IME SWITCHER (Bấm được kể cả khi mở Modal) -->
+  <div id="floating-ime-bar">
+    <span style="font-weight:700; color:var(--border-gold);">IME:</span>
+    <button type="button" class="ime-toggle-btn ime-btn-vi active" style="color:#fff; padding:3px 8px;">VI</button>
+    <button type="button" class="ime-toggle-btn ime-btn-zh" style="color:#fff; padding:3px 8px;">中文 Pinyin</button>
+    <span class="hotkey-badge">Ctrl+Shift</span>
+  </div>
+
   <!-- AUTHENTICATION VIEW -->
   <div id="login-view">
     <div class="login-card">
-      <div style="display:flex; align-items:center; gap:12px; margin-bottom: 24px;">
-        <div class="brand-logo-seal">华</div>
+      <div style="display:flex; align-items:center; gap:14px; margin-bottom: 26px;">
+        <div class="brand-logo-seal">華</div>
         <div>
-          <h2 style="font-size: 18px; font-weight:700;">Chinese Learning Hub</h2>
-          <p style="font-size: 12px; color:var(--text-muted);">Nền tảng Quản lý Dạy & Học Tiếng Trung 1:1</p>
+          <h2 style="font-size: 20px; font-weight:700; font-family:var(--font-editorial);">Chinese Learning Hub</h2>
+          <p style="font-size: 12px; color:var(--warm-gold); font-weight:600;">Nền tảng Học Tiếng Trung 1:1</p>
         </div>
       </div>
 
       <form id="login-form">
-        <div style="margin-bottom: 16px;">
-          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Email tài khoản</label>
-          <input type="email" id="login-email" required class="form-input" placeholder="teacher@chinesehub.vn">
+        <div class="form-group">
+          <label>Email tài khoản</label>
+          <input type="email" id="login-email" required class="form-input" placeholder="teacher@chinesehub.vn" value="teacher@chinesehub.vn">
         </div>
-        <div style="margin-bottom: 20px;">
-          <label style="display:block; font-size:12px; font-weight:600; margin-bottom:6px;">Mật khẩu</label>
-          <input type="password" id="login-password" required class="form-input" placeholder="••••••••">
+        <div class="form-group" style="margin-bottom: 22px;">
+          <label>Mật khẩu (Plaintext)</label>
+          <input type="password" id="login-password" required class="form-input" placeholder="••••••••" value="Teacher@123">
         </div>
-        <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width:100%; padding:11px; font-size:14px;">Đăng nhập hệ thống</button>
+        <button type="submit" id="login-submit-btn" class="btn btn-primary" style="width:100%; padding:12px; font-size:14px;">Đăng nhập hệ thống</button>
       </form>
 
-      <div style="margin-top: 24px; padding-top:16px; border-top:1px solid var(--border-color); font-size:12px; color:var(--text-muted); line-height:1.5;">
-        <strong>Tài khoản Demo có sẵn:</strong><br>
-        • Giáo viên: <code>teacher@chinesehub.vn</code> | <code>Teacher@123</code><br>
-        • Học sinh: <code>student@chinesehub.vn</code> | <code>Student@123</code>
+      <div style="margin-top: 26px; padding-top:18px; border-top:1px dashed var(--border-color); font-size:12px; color:var(--text-muted); line-height:1.6;">
+        <strong>Tài khoản hệ thống mặc định:</strong><br>
+        • Giáo viên: <code>teacher@chinesehub.vn</code> | MK: <code>Teacher@123</code><br>
+        • Học sinh: <code>student@chinesehub.vn</code> | MK: <code>Student@123</code>
       </div>
     </div>
   </div>
@@ -621,38 +714,37 @@
     <!-- SIDEBAR -->
     <aside class="sidebar">
       <div class="brand-header">
-        <div class="brand-logo-seal">华</div>
+        <div class="brand-logo-seal">華</div>
         <div class="brand-title-wrap">
-          <h1>Learning Hub</h1>
+          <h1 class="zh-serif">Learning Hub</h1>
           <p>Chinese 1:1 Mastery</p>
         </div>
       </div>
 
       <ul class="sidebar-menu">
         <li class="menu-group-label">Tổng quan</li>
-        <li><a class="nav-item active" data-view="dashboard"><i data-lucide="layout-dashboard"></i> Bàn làm việc</a></li>
-        <li><a class="nav-item" data-view="courses"><i data-lucide="book-open"></i> Lớp & Buổi học</a></li>
+        <li><a class="nav-item active" data-view="dashboard"><i data-lucide="layout-dashboard"></i> Bàn làm việc (工作台)</a></li>
+        <li><a class="nav-item" data-view="courses"><i data-lucide="book-open"></i> Lớp & Buổi học (课程)</a></li>
 
-        <li class="menu-group-label">Học tập & Bài tập</li>
-        <li><a class="nav-item" data-view="assignments"><i data-lucide="file-edit"></i> Bài tập & Nộp bài</a></li>
+        <li class="menu-group-label">Học tập & Nhiệm vụ</li>
+        <li><a class="nav-item" data-view="assignments"><i data-lucide="file-edit"></i> Bài tập & Nộp bài (作业)</a></li>
         <li><a class="nav-item" data-view="error-notebook"><i data-lucide="alert-circle"></i> Sổ lỗi sai (错题本)</a></li>
-        <li><a class="nav-item" data-view="learning-journal"><i data-lucide="feather"></i> Nhật ký học tập</a></li>
+        <li><a class="nav-item" data-view="learning-journal"><i data-lucide="feather"></i> Nhật ký học tập (反思)</a></li>
 
-        <li class="menu-group-label">Công cụ Hán ngữ</li>
-        <li><a class="nav-item" data-view="dictionary"><i data-lucide="search"></i> Từ điển Trung - Việt</a></li>
+        <li class="menu-group-label">Hán ngữ & Từ vựng</li>
+        <li><a class="nav-item" data-view="dictionary"><i data-lucide="search"></i> Từ điển Hán - Việt (词典)</a></li>
         <li><a class="nav-item" data-view="vocabulary"><i data-lucide="bookmark"></i> Sổ từ vựng cá nhân</a></li>
-        <li><a class="nav-item" data-view="flashcards"><i data-lucide="layers"></i> Thẻ ghi nhớ (Flashcards)</a></li>
+        <li><a class="nav-item" data-view="flashcards"><i data-lucide="layers"></i> Flashcards SM-2 (生词卡)</a></li>
 
         <li class="menu-group-label">Phân tích & Tiến độ</li>
         <li><a class="nav-item" data-view="reports"><i data-lucide="bar-chart-2"></i> Báo cáo & Đánh giá</a></li>
       </ul>
 
       <div class="user-profile-badge">
-        <!-- SVG Data-URI mặc định triệt tiêu hoàn toàn lỗi 404 khi chưa load avatar -->
-        <img id="sidebar-user-avatar" class="user-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23C84B38'/%3E%3Ctext x='50%25' y='50%25' font-size='16' font-family='sans-serif' font-weight='bold' fill='%23ffffff' text-anchor='middle' dy='.35em'%3E华%3C/text%3E%3C/svg%3E" alt="Avatar">
+        <img id="sidebar-user-avatar" class="user-avatar" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Ccircle cx='20' cy='20' r='20' fill='%23B83528'/%3E%3Ctext x='50%25' y='50%25' font-size='18' font-family='sans-serif' font-weight='bold' fill='%23ffffff' text-anchor='middle' dy='.35em'%3E華%3C/text%3E%3C/svg%3E" alt="Avatar">
         <div class="user-info">
           <div id="sidebar-user-name" class="user-name">Đang tải...</div>
-          <span id="sidebar-user-role" class="user-role-tag">ROLE</span>
+          <span id="sidebar-user-role" class="chinese-seal-tag">ROLE</span>
         </div>
         <button id="btn-logout" title="Đăng xuất" class="btn btn-outline btn-sm" style="padding:6px;"><i data-lucide="log-out" style="width:14px; height:14px;"></i></button>
       </div>
@@ -662,14 +754,14 @@
     <main class="main-viewport">
       <!-- HEADER -->
       <header class="top-header">
-        <div class="breadcrumb-title" id="page-current-title">Bàn làm việc</div>
+        <div class="breadcrumb-title" id="page-current-title">Bàn làm việc (工作台)</div>
         <div class="header-actions">
-          <!-- INTEGRATED PINYIN ENGINE SWITCHER -->
+          <!-- INTEGRATED PINYIN ENGINE SWITCHER IN HEADER -->
           <div class="ime-switcher-widget">
-            <button type="button" class="ime-toggle-btn active" id="btn-ime-vi">VI</button>
-            <button type="button" class="ime-toggle-btn" id="btn-ime-zh">中文 Pinyin</button>
+            <button type="button" class="ime-toggle-btn ime-btn-vi active">VI</button>
+            <button type="button" class="ime-toggle-btn ime-btn-zh">中文 Pinyin</button>
           </div>
-          <span style="font-size:12px; color:var(--text-muted);" id="api-status-badge">● Trực tuyến</span>
+          <span style="font-size:12px; color:var(--jade-green); font-weight:600;">● Trực tuyến</span>
         </div>
       </header>
 
@@ -692,7 +784,7 @@
               <div class="stat-metric-val" id="stat-avg-score">0.0</div>
             </div>
             <div class="stat-metric-box">
-              <div class="stat-metric-label">Từ vựng đến hạn ôn</div>
+              <div class="stat-metric-label">Từ vựng cần ôn hôm nay</div>
               <div class="stat-metric-val" id="stat-due-flashcards">0</div>
             </div>
           </div>
@@ -700,7 +792,7 @@
           <div style="display:grid; grid-template-columns: 2fr 1fr; gap:24px;">
             <div class="editorial-card">
               <div class="card-header-clean">
-                <div class="card-title"><i data-lucide="calendar"></i> Buổi học tiếp theo</div>
+                <div class="card-title"><i data-lucide="calendar"></i> Buổi học tiếp theo (下节课程)</div>
                 <a id="btn-join-meet" target="_blank" class="btn btn-jade btn-sm"><i data-lucide="video"></i> Vào Google Meet</a>
               </div>
               <div id="dash-upcoming-lesson-info" style="font-size:14px; color:var(--text-main);">
@@ -710,7 +802,7 @@
 
             <div class="editorial-card">
               <div class="card-header-clean">
-                <div class="card-title"><i data-lucide="bell"></i> Việc cần chú ý</div>
+                <div class="card-title"><i data-lucide="bell"></i> Cần chú ý (重点关注)</div>
               </div>
               <div id="dash-action-items-list" style="font-size:13px; color:var(--text-muted);">
                 Chưa có cảnh báo học tập.
@@ -720,7 +812,7 @@
 
           <div class="editorial-card">
             <div class="card-header-clean">
-              <div class="card-title"><i data-lucide="clock"></i> Hoạt động bài nộp gần đây</div>
+              <div class="card-title"><i data-lucide="clock"></i> Hoạt động bài tập gần đây (近期作业)</div>
             </div>
             <div class="hub-table-wrapper">
               <table class="hub-table">
@@ -744,9 +836,9 @@
         <!-- VIEW: COURSES & LESSONS -->
         <section id="view-courses" class="content-view-pane" style="display:none;">
           <div class="card-header-clean" style="margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:700;">Khóa học & Lịch trình buổi học 1:1</h2>
+            <h2 style="font-size:18px; font-weight:700; font-family:var(--font-editorial);">Khóa học & Lịch trình 1:1</h2>
             <div style="display:flex; gap:10px;">
-              <button id="btn-create-course-modal" class="btn btn-outline btn-sm"><i data-lucide="plus"></i> Tạo khóa học</button>
+              <button id="btn-create-course-modal" class="btn btn-outline btn-sm"><i data-lucide="plus"></i> Tạo khóa học mới</button>
               <button id="btn-create-lesson-modal" class="btn btn-primary btn-sm"><i data-lucide="plus-circle"></i> Tạo buổi học mới</button>
             </div>
           </div>
@@ -756,7 +848,7 @@
         <!-- VIEW: ASSIGNMENTS -->
         <section id="view-assignments" class="content-view-pane" style="display:none;">
           <div class="card-header-clean" style="margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:700;">Danh sách bài tập & Giao nhiệm vụ</h2>
+            <h2 style="font-size:18px; font-weight:700; font-family:var(--font-editorial);">Danh sách bài tập & Giao nhiệm vụ</h2>
             <button id="btn-create-assignment-modal" class="btn btn-primary btn-sm"><i data-lucide="plus-circle"></i> Giao bài tập mới</button>
           </div>
           <div id="assignments-list-container"></div>
@@ -767,7 +859,7 @@
           <div class="editorial-card">
             <div class="card-header-clean">
               <div>
-                <h2 style="font-size:18px; font-weight:700;">Sổ lỗi sai cá nhân (错题本)</h2>
+                <h2 style="font-size:18px; font-weight:700; font-family:var(--font-editorial); color:var(--primary);">Sổ lỗi sai cá nhân (错题本)</h2>
                 <p style="font-size:12px; color:var(--text-muted);">Tự động trích xuất từ các lỗi ngữ pháp và từ vựng trong bài tập đã chấm.</p>
               </div>
             </div>
@@ -777,7 +869,7 @@
                   <tr>
                     <th>Lỗi sai của học sinh</th>
                     <th>Sửa lại chuẩn xác</th>
-                    <th>Giải thích chi tiết của Giáo viên</th>
+                    <th>Giải thích của Lão Sư</th>
                     <th>Phân loại</th>
                     <th>Trạng thái</th>
                   </tr>
@@ -791,16 +883,16 @@
         <!-- VIEW: LEARNING JOURNAL -->
         <section id="view-learning-journal" class="content-view-pane" style="display:none;">
           <div class="editorial-card">
-            <h3 style="font-size:16px; font-weight:700; margin-bottom:14px;">Viết nhật ký phản tư buổi học hôm nay</h3>
+            <h3 style="font-size:16px; font-weight:700; margin-bottom:14px; font-family:var(--font-editorial); color:var(--primary);">Viết nhật ký phản tư buổi học hôm nay (课后反思)</h3>
             <form id="journal-entry-form">
               <div class="form-group">
                 <label>Hôm nay bạn đã học được kiến thức trọng tâm gì?</label>
-                <textarea id="journal-learned" class="form-textarea pinyin-enabled" rows="2" required placeholder="Gõ nội dung tâm đắc..."></textarea>
+                <textarea id="journal-learned" class="form-textarea pinyin-enabled" rows="2" required placeholder="Gõ nội dung tâm đắc (Hỗ trợ gõ Pinyin trực tiếp)..."></textarea>
               </div>
               <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:12px;">
                 <div class="form-group">
                   <label>Phần nào còn cảm thấy khó hiểu?</label>
-                  <input type="text" id="journal-difficulties" class="form-input pinyin-enabled" placeholder="VD: Phân biệt 了 và 过...">
+                  <input type="text" id="journal-difficulties" class="form-input pinyin-enabled" placeholder="VD: Phân biệt cách dùng 了 và 过...">
                 </div>
                 <div class="form-group">
                   <label>Mức độ tự tin / hiểu bài</label>
@@ -822,9 +914,9 @@
         <!-- VIEW: DICTIONARY -->
         <section id="view-dictionary" class="content-view-pane" style="display:none;">
           <div class="editorial-card">
-            <h2 style="font-size:18px; font-weight:700; margin-bottom:16px;">Tra cứu Từ điển Tiếng Trung - Tiếng Việt</h2>
+            <h2 style="font-size:18px; font-weight:700; margin-bottom:16px; font-family:var(--font-editorial); color:var(--primary);">Tra cứu Từ điển Tiếng Trung - Tiếng Việt (汉越词典)</h2>
             <div style="display:flex; gap:12px; margin-bottom:20px;">
-              <input type="text" id="dict-search-input" class="form-input pinyin-enabled" placeholder="Gõ chữ Hán, Pinyin hoặc nghĩa Tiếng Việt (VD: 你好, nihao, xin chao)..." style="font-size:14px; padding:12px 16px;">
+              <input type="text" id="dict-search-input" class="form-input pinyin-enabled" placeholder="Gõ chữ Hán, Pinyin hoặc nghĩa Tiếng Việt (VD: 你好, nihao, xin chao)..." style="font-size:15px; padding:12px 18px;">
               <button id="btn-dict-search" class="btn btn-primary"><i data-lucide="search"></i> Tra từ</button>
             </div>
             <div id="dict-search-results"></div>
@@ -834,7 +926,7 @@
         <!-- VIEW: VOCABULARY NOTEBOOK -->
         <section id="view-vocabulary" class="content-view-pane" style="display:none;">
           <div class="card-header-clean" style="margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:700;">Sổ từ vựng cá nhân tích lũy</h2>
+            <h2 style="font-size:18px; font-weight:700; font-family:var(--font-editorial);">Sổ từ vựng cá nhân tích lũy (词汇笔记)</h2>
             <button id="btn-add-vocab-modal" class="btn btn-primary btn-sm"><i data-lucide="plus"></i> Thêm từ mới</button>
           </div>
           <div class="editorial-card">
@@ -845,7 +937,7 @@
                     <th>Chữ Hán</th>
                     <th>Pinyin</th>
                     <th>Nghĩa tiếng Việt</th>
-                    <th>Loại từ / Cấp độ</th>
+                    <th>Cấp độ</th>
                     <th>Ví dụ ứng dụng</th>
                     <th>Yêu thích</th>
                   </tr>
@@ -859,15 +951,15 @@
         <!-- VIEW: FLASHCARDS (SM-2) -->
         <section id="view-flashcards" class="content-view-pane" style="display:none;">
           <div class="card-header-clean" style="margin-bottom:20px;">
-            <h2 style="font-size:18px; font-weight:700;">Học từ vựng thông minh (Spaced Repetition SM-2)</h2>
+            <h2 style="font-size:18px; font-weight:700; font-family:var(--font-editorial);">Học từ vựng thông minh (Spaced Repetition SM-2)</h2>
             <div id="deck-selector-wrap"></div>
           </div>
 
           <div class="flashcard-stage">
             <div id="flashcard-box" class="flashcard-card-inner">
               <div id="fc-front-pane">
-                <div class="card-hanzi-display" id="fc-hanzi">Chưa có thẻ</div>
-                <p style="font-size:12px; color:var(--text-muted);">Nhấn thẻ hoặc bấm phím Space để xem kết quả</p>
+                <div class="card-hanzi-display zh-serif" id="fc-hanzi">Chưa có thẻ</div>
+                <p style="font-size:13px; color:var(--text-muted);">Nhấn thẻ hoặc bấm phím Space để lật mặt sau</p>
               </div>
               <div id="fc-back-pane" style="display:none;">
                 <div class="card-pinyin-display" id="fc-pinyin"></div>
@@ -877,10 +969,10 @@
             </div>
 
             <div id="fc-action-controls" style="display:none; margin-top:20px; justify-content:center; gap:12px;">
-              <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="App.Flashcard.review(1)">Quên / Lại (1 ngày)</button>
-              <button class="btn btn-outline" style="color:var(--warning); border-color:var(--warning);" onclick="App.Flashcard.review(2)">Khó</button>
-              <button class="btn btn-outline" style="color:var(--jade-green); border-color:var(--jade-green);" onclick="App.Flashcard.review(3)">Tốt</button>
-              <button class="btn btn-jade" onclick="App.Flashcard.review(4)">Dễ</button>
+              <button class="btn btn-outline" style="color:var(--danger); border-color:var(--danger);" onclick="App.Flashcard.review(1)">Quên (1 ngày)</button>
+              <button class="btn btn-outline" style="color:var(--warning); border-color:var(--warning);" onclick="App.Flashcard.review(2)">Khó nhớ</button>
+              <button class="btn btn-outline" style="color:var(--jade-green); border-color:var(--jade-green);" onclick="App.Flashcard.review(3)">Nhớ tốt</button>
+              <button class="btn btn-jade" onclick="App.Flashcard.review(4)">Dễ dàng</button>
             </div>
           </div>
         </section>
@@ -888,21 +980,21 @@
         <!-- VIEW: REPORTS & ANALYTICS -->
         <section id="view-reports" class="content-view-pane" style="display:none;">
           <div class="editorial-card">
-            <h2 style="font-size:18px; font-weight:700; margin-bottom:16px;">Phân tích kết quả học tập & Tiến trình</h2>
+            <h2 style="font-size:18px; font-weight:700; margin-bottom:16px; font-family:var(--font-editorial);">Phân tích kết quả học tập & Tiến trình (学情报告)</h2>
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:24px; margin-top:20px;">
               <div>
-                <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; text-align:center;">Phổ điểm & Kỹ năng</h4>
+                <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; text-align:center;">Phổ điểm & Kỹ năng</h4>
                 <canvas id="chart-skills-radar" height="220"></canvas>
               </div>
               <div>
-                <h4 style="font-size:14px; font-weight:600; margin-bottom:12px; text-align:center;">Tỷ lệ hoàn thành nhiệm vụ</h4>
+                <h4 style="font-size:14px; font-weight:700; margin-bottom:12px; text-align:center;">Tỷ lệ hoàn thành bài tập</h4>
                 <canvas id="chart-completion-donut" height="220"></canvas>
               </div>
             </div>
           </div>
 
           <div class="editorial-card">
-            <div class="card-title" style="margin-bottom:14px;"><i data-lucide="shield-alert"></i> Những điểm yếu ngữ pháp cần đặc biệt lưu ý</div>
+            <div class="card-title" style="margin-bottom:14px; color:var(--primary);"><i data-lucide="shield-alert"></i> Những điểm ngữ pháp cần lưu ý khắc phục</div>
             <div id="report-attention-list"></div>
           </div>
         </section>
@@ -924,11 +1016,11 @@
        MODAL DIALOGS
        ========================================================================= -->
 
-  <!-- 1. MODAL: GIAO BÀI TẬP MỚI (CREATE ASSIGNMENT) -->
+  <!-- 1. MODAL: GIAO BÀI TẬP MỚI -->
   <div id="assignment-modal" class="hub-modal-overlay">
     <div class="hub-modal-box">
       <div class="card-header-clean">
-        <h3 style="font-size:16px; font-weight:700;">Giao bài tập mới</h3>
+        <h3 style="font-size:16px; font-weight:700; font-family:var(--font-editorial);">Giao bài tập mới (发布作业)</h3>
         <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('assignment-modal')">✕</button>
       </div>
       <form id="assignment-create-form">
@@ -976,11 +1068,11 @@
     </div>
   </div>
 
-  <!-- 2. MODAL: TẠO BUỔI HỌC MỚI (CREATE LESSON) -->
+  <!-- 2. MODAL: TẠO BUỔI HỌC MỚI -->
   <div id="lesson-modal" class="hub-modal-overlay">
     <div class="hub-modal-box">
       <div class="card-header-clean">
-        <h3 style="font-size:16px; font-weight:700;">Lên lịch buổi học 1:1</h3>
+        <h3 style="font-size:16px; font-weight:700; font-family:var(--font-editorial);">Lên lịch buổi học 1:1</h3>
         <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('lesson-modal')">✕</button>
       </div>
       <form id="lesson-create-form">
@@ -1019,11 +1111,11 @@
     </div>
   </div>
 
-  <!-- 3. MODAL: TẠO KHÓA HỌC MỚI (CREATE COURSE) -->
+  <!-- 3. MODAL: TẠO KHÓA HỌC MỚI -->
   <div id="course-modal" class="hub-modal-overlay">
     <div class="hub-modal-box">
       <div class="card-header-clean">
-        <h3 style="font-size:16px; font-weight:700;">Tạo khóa học 1:1 mới</h3>
+        <h3 style="font-size:16px; font-weight:700; font-family:var(--font-editorial);">Tạo khóa học 1:1 mới</h3>
         <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('course-modal')">✕</button>
       </div>
       <form id="course-create-form">
@@ -1041,7 +1133,6 @@
               <option value="HSK 3">HSK 3</option>
               <option value="HSK 4">HSK 4</option>
               <option value="HSK 5">HSK 5</option>
-              <option value="HSK 6">HSK 6</option>
             </select>
           </div>
           <div class="form-group">
@@ -1058,18 +1149,18 @@
     </div>
   </div>
 
-  <!-- 4. MODAL: THÊM TỪ VỰNG MỚI (CREATE VOCABULARY) -->
+  <!-- 4. MODAL: THÊM TỪ VỰNG MỚI -->
   <div id="vocab-modal" class="hub-modal-overlay">
     <div class="hub-modal-box">
       <div class="card-header-clean">
-        <h3 style="font-size:16px; font-weight:700;">Thêm từ vựng vào sổ tay</h3>
+        <h3 style="font-size:16px; font-weight:700; font-family:var(--font-editorial);">Thêm từ vựng vào sổ tay (添加生词)</h3>
         <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('vocab-modal')">✕</button>
       </div>
       <form id="vocab-create-form">
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
           <div class="form-group">
             <label>Chữ Hán giản thể *</label>
-            <input type="text" id="voc-simplified" class="form-input pinyin-enabled zh-text" required placeholder="VD: 漂亮" style="font-size:16px;">
+            <input type="text" id="voc-simplified" class="form-input pinyin-enabled zh-serif" required placeholder="VD: 漂亮" style="font-size:18px;">
           </div>
           <div class="form-group">
             <label>Phiên âm Pinyin *</label>
@@ -1097,7 +1188,7 @@
         </div>
         <div class="form-group">
           <label>Câu ví dụ tiếng Trung</label>
-          <input type="text" id="voc-example-zh" class="form-input pinyin-enabled zh-text" placeholder="VD: 她长得很漂亮。">
+          <input type="text" id="voc-example-zh" class="form-input pinyin-enabled zh-serif" placeholder="VD: 她长得很漂亮。">
         </div>
         <div class="form-group">
           <label>Dịch nghĩa ví dụ</label>
@@ -1108,36 +1199,36 @@
     </div>
   </div>
 
-  <!-- 5. MODAL: NỘP BÀI TẬP (SUBMISSION MODAL) -->
+  <!-- 5. MODAL: NỘP BÀI TẬP -->
   <div id="submission-modal" class="hub-modal-overlay">
     <div class="hub-modal-box">
       <div class="card-header-clean">
-        <h3 style="font-size:16px; font-weight:700;" id="sub-modal-title">Nộp bài tập</h3>
+        <h3 style="font-size:16px; font-weight:700; font-family:var(--font-editorial);" id="sub-modal-title">Nộp bài tập (提交作业)</h3>
         <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('submission-modal')">✕</button>
       </div>
       <form id="submission-form">
         <input type="hidden" id="sub-assignment-id">
         <div class="form-group">
-          <label>Nội dung văn bản (Hỗ trợ bộ gõ Pinyin trực tiếp)</label>
-          <textarea id="sub-text-content" class="form-textarea pinyin-enabled" rows="5" placeholder="Gõ câu trả lời bằng chữ Hán tại đây..."></textarea>
+          <label>Nội dung văn bản (Hỗ trợ gõ Pinyin trực tiếp)</label>
+          <textarea id="sub-text-content" class="form-textarea pinyin-enabled" rows="5" placeholder="Gõ chữ Hán tại đây (Ấn phím tắt Ctrl+Shift để chuyển Pinyin nếu cần)..."></textarea>
         </div>
         <div class="form-group">
-          <label>Đính kèm tập tin (PDF, DOCX, Ảnh, Âm thanh ghi âm)</label>
-          <input type="file" id="sub-file-input" class="form-input" style="padding:6px;">
+          <label>Đính kèm tập tin (Ảnh bài viết tay, file Word, Audio ghi âm)</label>
+          <input type="file" id="sub-file-input" class="form-input" style="padding:8px;">
         </div>
         <button type="submit" id="btn-submit-work" class="btn btn-primary" style="width:100%;">Nộp bài chính thức</button>
       </form>
     </div>
   </div>
 
-  <!-- 6. MODAL: CHẤM ĐIỂM BÀI LÀM (GRADING MODAL) -->
+  <!-- 6. MODAL: CHẤM ĐIỂM BÀI LÀM -->
   <div id="grading-modal" class="hub-modal-overlay">
     <div class="hub-modal-box" style="max-width:800px;">
       <div class="card-header-clean">
-        <h3 style="font-size:16px; font-weight:700;">Chấm điểm & Nhận xét bài làm</h3>
+        <h3 style="font-size:16px; font-weight:700; font-family:var(--font-editorial);">Chấm điểm & Nhận xét bài làm (批改作业)</h3>
         <button type="button" class="btn btn-outline btn-sm" onclick="App.UI.closeModal('grading-modal')">✕</button>
       </div>
-      <div id="grading-submission-summary" style="margin-bottom:16px; background:#FAF9F6; padding:12px; border-radius:var(--radius-sm); font-size:13px; border:1px solid var(--border-color);"></div>
+      <div id="grading-submission-summary" style="margin-bottom:16px; background:var(--surface-parchment); padding:12px; border-radius:var(--radius-sm); font-size:13px; border:1px solid var(--border-color);"></div>
       <form id="grading-form">
         <input type="hidden" id="grade-sub-id">
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:14px;">
@@ -1152,11 +1243,11 @@
         </div>
         <div class="form-group">
           <label>Nhận xét chi tiết của Lão Sư</label>
-          <textarea id="grade-feedback-text" rows="3" class="form-textarea pinyin-enabled" placeholder="Ghi chú nhận xét..."></textarea>
+          <textarea id="grade-feedback-text" rows="3" class="form-textarea pinyin-enabled" placeholder="Ghi chú nhận xét bài làm..."></textarea>
         </div>
 
-        <div style="border-top:1px dashed var(--border-color); padding-top:12px; margin-bottom:14px;">
-          <h4 style="font-size:13px; font-weight:700; margin-bottom:8px; color:var(--primary);">Trích xuất lỗi sai vào Sổ Lỗi (Error Notebook)</h4>
+        <div style="border-top:1px dashed var(--border-color); padding-top:14px; margin-bottom:16px;">
+          <h4 style="font-size:13.5px; font-weight:700; margin-bottom:10px; color:var(--primary);">Trích xuất lỗi sai vào Sổ Lỗi (错题本)</h4>
           <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:8px;">
             <input type="text" id="grade-err-wrong" placeholder="Câu học sinh viết sai..." class="form-input pinyin-enabled">
             <input type="text" id="grade-err-correct" placeholder="Câu sửa chuẩn xác..." class="form-input pinyin-enabled">
